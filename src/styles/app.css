@@ -618,6 +618,7 @@ img { max-width: 100%; display: block; }
   transition: width var(--dur-ceremony) var(--ease-standard);
 }
 .result.is-settled .result__rule { width: 128px; }
+.result__figure.is-grew { color: var(--signal); font-size: clamp(2rem, 5vw, var(--t-large)); }
 .result__detail { font-size: var(--t-micro); color: var(--ink-faint); }
 .result__arrow, .result__sep { margin: 0 0.45em; opacity: 0.6; }
 

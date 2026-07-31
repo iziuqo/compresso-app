@@ -111,9 +111,21 @@ export function Tile({
   job: Job; selected: boolean;
   onSelect: () => void; onRemove: () => void; onRetry: () => void;
 }) {
-  const { t, bytes, percent } = useI18n();
+  const { t, bytes, percent, count } = useI18n();
   const grew = job.out ? job.out.savings < 0 : false;
   const label = t(`status.${job.status}` as 'status.done');
+
+  /**
+   * Past a certain point a percentage stops being information. "+2,719%" is a
+   * number nobody can picture; "×28" is immediately legible. Below that
+   * threshold the percentage is still the more useful reading.
+   */
+  const figure = (() => {
+    if (!job.out) return null;
+    const { savings, originalSize, compressedSize } = job.out;
+    if (savings < -150 && originalSize > 0) return `×${count(Math.round(compressedSize / originalSize))}`;
+    return (grew ? '+' : '−') + percent(Math.abs(savings) / 100);
+  })();
 
   return (
     <div
@@ -130,11 +142,8 @@ export function Tile({
           <span className="tile__name mono">{job.file.name}</span>
           <span className="tile__line">
             <span className="tile__figure">
-              {job.out ? (
-                <Odometer
-                  className={grew ? 'is-grew' : ''}
-                  value={(grew ? '+' : '−') + percent(Math.abs(job.out.savings) / 100)}
-                />
+              {figure ? (
+                <Odometer className={grew ? 'is-grew' : ''} value={figure} />
               ) : (
                 <span className="tile__status">{label}</span>
               )}
@@ -174,13 +183,12 @@ export function Result({
 }: { saved: number; fraction: number; from: number; to: number; settled: boolean }) {
   const { bytes, percent } = useI18n();
   const grew = saved < 0;
-  void saved;
 
   return (
     <div className={`result ${settled ? 'is-settled' : ''}`}>
       <p className="result__eyebrow"><T k={grew ? 'result.grew' : 'result.saved'} /></p>
-      <p className="result__figure" aria-live="polite">
-        <Odometer value={percent(Math.abs(fraction))} />
+      <p className={`result__figure ${grew ? 'is-grew' : ''}`} aria-live="polite">
+        <Odometer value={grew ? `+${bytes(Math.abs(saved))}` : percent(Math.abs(fraction))} />
       </p>
       <span className="result__rule" aria-hidden="true" />
       <p className="result__detail mono">
