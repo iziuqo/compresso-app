@@ -1,0 +1,121 @@
+/* ===========================================================================
+   THE PRESS — design tokens
+   Compresso → espresso → pressing. This is a small print shop: paper, ink,
+   pressure, impression. Every value below traces back to that.
+   =========================================================================== */
+
+:root {
+  /* --- ink & paper ------------------------------------------------------ */
+  --paper:        #F6F2EA;   /* warm stock, never white */
+  --paper-raised: #FBF8F2;   /* the sheet on the bed */
+  --paper-sunk:   #EDE7DC;   /* the tray beneath it */
+  --ink:          #171412;   /* warm near-black, never #000 */
+  --ink-soft:     #5A524A;
+  --ink-faint:    #948B80;
+  --rule:         rgb(23 20 18 / 0.11);   /* hairlines are ink at low alpha */
+  --rule-strong:  rgb(23 20 18 / 0.22);
+  --signal:       #B8442A;   /* burnt vermilion — the one accent */
+  --signal-sunk:  #8E3320;
+  --signal-wash:  rgb(184 68 42 / 0.08);
+
+  --grain-blend:  multiply;
+  --grain-alpha:  0.035;
+
+  /* --- type ------------------------------------------------------------- */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-ui:      'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* optically set, not a ratio */
+  --t-micro: 0.6875rem;  /* 11 */
+  --t-meta:  0.75rem;    /* 12 */
+  --t-small: 0.8125rem;  /* 13 */
+  --t-body:  0.9375rem;  /* 15 */
+  --t-lead:  1.0625rem;  /* 17 */
+  --t-sub:   1.3125rem;  /* 21 */
+  --t-title: 1.75rem;    /* 28 */
+  --t-large: 2.75rem;    /* 44 */
+  --t-hero:  4.5rem;     /* 72 — once per screen, and only for the savings */
+
+  /* --- space ------------------------------------------------------------ */
+  --s-1: 0.25rem; --s-2: 0.5rem;  --s-3: 0.75rem; --s-4: 1rem;
+  --s-5: 1.5rem;  --s-6: 2rem;    --s-7: 3rem;    --s-8: 4.5rem;
+
+  --rail: 312px;             /* set to the measure of its content, not a round number */
+  --hair: 1px;
+
+  /* --- radii — varied and meaningful, never uniform --------------------- */
+  --r-sheet: 3px;            /* a trimmed sheet */
+  --r-panel: 2px;
+  --r-tile:  0px;            /* a photo is a rectangle. respect it. */
+  --r-pill:  999px;          /* the ONLY round thing: the primary action */
+
+  /* --- motion — no control point exceeds y=1, so overshoot is not
+         representable in this system. see MOTION.md ---------------------- */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-entrance: cubic-bezier(0.16, 1,    0.30, 1);
+  --ease-exit:     cubic-bezier(0.40, 0,    1,    1);
+  --ease-glide:    cubic-bezier(0.65, 0,    0.35, 1);
+
+  --dur-micro:    120ms;
+  --dur-standard: 240ms;
+  --dur-entrance: 360ms;
+  --dur-ceremony: 520ms;
+  --stagger:       24ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:        #16130F;
+    --paper-raised: #1E1A15;
+    --paper-sunk:   #100D0A;
+    --ink:          #F0EAE0;
+    --ink-soft:     #A79C8E;
+    --ink-faint:    #6E6459;
+    --rule:         rgb(240 234 224 / 0.12);
+    --rule-strong:  rgb(240 234 224 / 0.24);
+    --signal:       #E4643F;
+    --signal-sunk:  #C24E2C;
+    --signal-wash:  rgb(228 100 63 / 0.12);
+    --grain-blend:  soft-light;
+    --grain-alpha:  0.05;
+  }
+}
+
+/* --- faces. latin only: the display serif has no CJK coverage and CJK web
+       fonts are multi-MB, which would wreck the offline precache. zh falls
+       back to a system CJK stack — zero bytes, and it looks native. -------- */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-latin.woff2') format('woff2');
+  font-weight: 300 900; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2122, U+2212;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/fonts/instrumentsans-latin.woff2') format('woff2');
+  font-weight: 400 700; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2122, U+2212;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/fonts/instrumentsans-latin-ext.woff2') format('woff2');
+  font-weight: 400 700; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+1E00-1E9F, U+2C60-2C7F;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geistmono-latin.woff2') format('woff2');
+  font-weight: 400 500; font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+2212;
+}
+
+/* zh-Hans: system CJK, tuned metrics. negative tracking wrecks CJK — remove it. */
+:lang(zh-Hans) {
+  --font-ui: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-display: 'Fraunces', 'PingFang SC', 'Hiragino Sans GB', 'Noto Serif SC', serif;
+  letter-spacing: 0 !important;
+  line-height: 1.7;
+}
