@@ -171,15 +171,18 @@ export default function App() {
     <div className={`app ${hasJobs ? 'is-working' : 'is-empty'} ${dragging ? 'is-dragging' : ''}`}>
       <Grain />
 
-      <header className="head">
-        <div className="head__left">{hasJobs && <Wordmark />}</div>
-        <div className="head__right">
-          {install.canInstall && <InstallChip onInstall={install.install} />}
-          <LangMenu />
-        </div>
-      </header>
-
-      {updateReady && <UpdateBar onReload={applyUpdate} />}
+      {/* head and the update notice share one grid row, so the notice appearing
+          never re-proportions the workspace beneath it */}
+      <div className="top">
+        <header className="head">
+          <div className="head__left">{hasJobs && <Wordmark />}</div>
+          <div className="head__right">
+            {install.canInstall && <InstallChip onInstall={install.install} />}
+            <LangMenu />
+          </div>
+        </header>
+        {updateReady && <UpdateBar onReload={applyUpdate} />}
+      </div>
 
       <main className="main">
         {!hasJobs ? (

@@ -66,6 +66,8 @@ img { max-width: 100%; display: block; }
   overflow: hidden;
 }
 
+.top { display: flex; flex-direction: column; }
+
 .head {
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--s-4);
