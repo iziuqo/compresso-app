@@ -19,8 +19,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#F6F2EA',
-        theme_color: '#F6F2EA',
+        background_color: '#000000',
+        theme_color: '#000000',
         orientation: 'any',
         categories: ['utilities', 'photo', 'productivity'],
         icons: [

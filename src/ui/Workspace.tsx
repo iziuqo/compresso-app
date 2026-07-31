@@ -6,13 +6,13 @@ import type { Job } from '../state/queue';
 /* -------------------------------------------------------------------- compare */
 
 /**
- * The comparison seam.
+ * The picture, and the seam through it.
  *
- * There is no snap at the midpoint — a snap is a decision the interface makes for
- * you. Instead the handle *decelerates* as it nears 50%: within the last few
- * percent, movement is compressed so it takes more travel to cross the middle.
- * You can still go anywhere; the centre just has a little weight to it, the way a
- * detent does on a well-made dial.
+ * There is no snap at the midpoint — a snap is a decision the interface makes
+ * for you. The handle *decelerates* into the centre instead: within the last few
+ * percent, movement compresses so it takes more travel to cross. You can still
+ * put it anywhere; the middle just has a little weight, the way a detent does on
+ * a well-made dial.
  */
 export function Compare({ job }: { job: Job }) {
   const { t } = useI18n();
@@ -27,10 +27,7 @@ export function Compare({ job }: { job: Job }) {
     const raw = Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100));
     const d = raw - 50;
     const pull = 7;
-    const eased = Math.abs(d) < pull
-      ? 50 + Math.sign(d) * pull * Math.pow(Math.abs(d) / pull, 1.55)
-      : raw;
-    setX(eased);
+    setX(Math.abs(d) < pull ? 50 + Math.sign(d) * pull * Math.pow(Math.abs(d) / pull, 1.55) : raw);
   }, []);
 
   useEffect(() => {
@@ -53,18 +50,23 @@ export function Compare({ job }: { job: Job }) {
     if (e.key === 'End') { setX(100); e.preventDefault(); }
   };
 
-  const ready = job.out && job.previewUrl;
+  const ready = !!(job.out && job.previewUrl);
 
   return (
     <div
       className={`cmp ${dragging ? 'is-dragging' : ''} ${ready ? 'is-ready' : ''}`}
       ref={wrap}
-      style={{ ['--x' as string]: `${x}%` }}
+      style={{
+        ['--x' as string]: `${x}%`,
+        // The frame takes the photograph's own proportions, so it is letterboxed
+        // by the black around it rather than cropped by a box we chose.
+        ['--ar' as string]: job.out ? `${job.out.originalWidth} / ${job.out.originalHeight}` : '3 / 2',
+      }}
       onPointerDown={(e) => { setDragging(true); position(e.clientX); }}
     >
       <div className="cmp__stage">
         {job.previewUrl && (
-          <img className="cmp__img cmp__img--before" src={job.previewUrl} alt={t('view.before')} draggable={false} />
+          <img className="cmp__img" src={job.previewUrl} alt={t('view.before')} draggable={false} />
         )}
         {job.out && job.previewUrl && (
           <div className="cmp__after">
@@ -87,8 +89,8 @@ export function Compare({ job }: { job: Job }) {
         <span className="cmp__grip" aria-hidden="true" />
       </button>
 
-      <span className="cmp__tag cmp__tag--l"><T k="view.before" /></span>
-      <span className="cmp__tag cmp__tag--r"><T k="view.after" /></span>
+      <span className="cmp__tag cmp__tag--l label"><T k="view.before" /></span>
+      <span className="cmp__tag cmp__tag--r label"><T k="view.after" /></span>
     </div>
   );
 }
@@ -98,12 +100,10 @@ export function Compare({ job }: { job: Job }) {
 /**
  * Status without colour.
  *
- * Queued is a sheet that hasn't been pressed: dim, with the grain turned up.
- * Running *develops* — the blur resolving as progress climbs is the progress
- * indicator; there is no bar. Done settles two pixels upward, because it is
- * lighter now. Failed is struck through with a single diagonal hairline.
- *
- * Not one of those states is a coloured chip.
+ * Queued is dim. Running *develops* — the blur resolving as progress climbs is
+ * the progress indicator; there is no bar. Done is full strength with a white
+ * rule beneath it. Failed is struck through with one diagonal hairline. Not a
+ * single coloured chip anywhere.
  */
 export function Tile({
   job, selected, onSelect, onRemove, onRetry,
@@ -111,15 +111,12 @@ export function Tile({
   job: Job; selected: boolean;
   onSelect: () => void; onRemove: () => void; onRetry: () => void;
 }) {
-  const { t, bytes, percent, count } = useI18n();
+  const { t, percent, count } = useI18n();
   const grew = job.out ? job.out.savings < 0 : false;
   const label = t(`status.${job.status}` as 'status.done');
 
-  /**
-   * Past a certain point a percentage stops being information. "+2,719%" is a
-   * number nobody can picture; "×28" is immediately legible. Below that
-   * threshold the percentage is still the more useful reading.
-   */
+  /* Past a point a percentage stops being information: "+2,719%" is a number
+     nobody can picture, where "×28" is instant. */
   const figure = (() => {
     if (!job.out) return null;
     const { savings, originalSize, compressedSize } = job.out;
@@ -135,37 +132,26 @@ export function Tile({
       <button type="button" className="tile__hit" onClick={onSelect} aria-pressed={selected}>
         <span className="tile__frame">
           {job.previewUrl && <img className="tile__img" src={job.previewUrl} alt="" draggable={false} />}
-          <span className="tile__grain" aria-hidden="true" />
           {job.status === 'failed' && <span className="tile__strike" aria-hidden="true" />}
+          <span className="tile__mark" aria-hidden="true" />
         </span>
-        <span className="tile__meta">
-          <span className="tile__name mono">{job.file.name}</span>
-          <span className="tile__line">
-            <span className="tile__figure">
-              {figure ? (
-                <Odometer className={grew ? 'is-grew' : ''} value={figure} />
-              ) : (
-                <span className="tile__status">{label}</span>
-              )}
-            </span>
-            <span className="tile__aside mono">
-              {job.out ? bytes(job.out.compressedSize) : bytes(job.file.size)}
-            </span>
-          </span>
+        <span className="tile__figure mono">
+          {figure ? <Odometer className={grew ? 'is-grew' : ''} value={figure} />
+                  : <span className="tile__status label">{label}</span>}
         </span>
       </button>
 
       {job.status === 'failed' ? (
-        <button type="button" className="tile__act" onClick={onRetry}><T k="action.retry" /></button>
+        <button type="button" className="tile__retry label" onClick={onRetry}><T k="action.retry" /></button>
       ) : (
-        <button type="button" className="tile__act tile__act--quiet" onClick={onRemove}>
+        <button type="button" className="tile__x" onClick={onRemove}>
           <span className="sr">{t('action.remove')}</span>
-          <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          <svg width="9" height="9" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.4" fill="none" />
           </svg>
         </button>
       )}
-      <span className="sr" aria-live="polite">{label}</span>
+      <span className="sr" aria-live="polite">{job.file.name}: {label}</span>
     </div>
   );
 }
@@ -173,10 +159,10 @@ export function Tile({
 /* -------------------------------------------------------------------- result */
 
 /**
- * The one loud moment. Everything else on screen is set at metadata scale so this
- * figure can carry the whole hierarchy on its own — no badge, no colour, no
- * celebration graphic. The hairline drawing itself underneath is the full extent
- * of the ceremony, and it only happens once the queue has settled.
+ * The one loud thing. Everything else on screen is set at label scale so this
+ * figure can carry the hierarchy by itself — no badge, no colour, no celebration
+ * graphic. It's set light rather than heavy: at this size, weight would shout
+ * where scale already speaks.
  */
 export function Result({
   saved, fraction, from, to, settled,
@@ -185,14 +171,13 @@ export function Result({
   const grew = saved < 0;
 
   return (
-    <div className={`result ${settled ? 'is-settled' : ''}`}>
-      <p className="result__eyebrow"><T k={grew ? 'result.grew' : 'result.saved'} /></p>
+    <div className={`result ${settled ? 'is-settled' : ''} ${grew ? 'is-grew' : ''}`}>
       <p className={`result__figure ${grew ? 'is-grew' : ''}`} aria-live="polite">
         <Odometer value={grew ? `+${bytes(Math.abs(saved))}` : percent(Math.abs(fraction))} />
       </p>
-      <span className="result__rule" aria-hidden="true" />
       <p className="result__detail mono">
-        {bytes(from)} <span className="result__arrow" aria-hidden="true">→</span> {bytes(to)}
+        {bytes(from)} <span aria-hidden="true">→</span> {bytes(to)}
+        <span className="result__label label"><T k={grew ? 'result.grew' : 'result.saved'} /></span>
       </p>
     </div>
   );

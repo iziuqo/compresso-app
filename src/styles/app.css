@@ -1,49 +1,55 @@
 /* ===========================================================================
-   THE PRESS — interface
-   Structure comes from hairlines and spacing, never from boxes with borders and
-   radii. Depth comes from impression (inset), never from drop shadows.
+   Compresso — interface
+
+   Black ground, white ink, one pill. The photograph is the only colour that
+   ever appears on this screen; the alert red shows on exactly one condition.
+   Structure is carried by space and hairlines — there are no cards.
    =========================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--void);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: var(--t-body);
+  font-weight: 400;
   line-height: 1.5;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
   overscroll-behavior: none;
 }
-button, input, label { font: inherit; color: inherit; }
+button, input, label { font: inherit; color: inherit; letter-spacing: inherit; }
 button { background: none; border: 0; padding: 0; cursor: pointer; }
+button[disabled] { cursor: default; opacity: 0.28; }
 h1, h2, p { margin: 0; }
 img { max-width: 100%; display: block; }
 
-::selection { background: var(--signal); color: var(--paper-raised); }
-
-:focus-visible {
-  outline: 1.5px solid var(--signal);
-  outline-offset: 2px;
-  border-radius: 1px;
-}
+::selection { background: var(--ink); color: var(--void); }
+:focus-visible { outline: 1.5px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
 
 .sr {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* Two utilities carry most of the typographic character:
+   `.label` — 10px, uppercase, tracked wide. `.mono` — anything that is data. */
+.label {
+  font-size: var(--t-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  line-height: 1.2;
+}
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
-/* Nothing that counts may ever change width while counting. */
-.mono, .odo, .row__value, .tile__aside, .result__figure { font-variant-numeric: tabular-nums; }
+.odo, .result__figure, .sl__value { font-variant-numeric: tabular-nums; }
 
-/* --- the paper ---------------------------------------------------------- */
 .grain {
   position: fixed; inset: 0; z-index: 100; pointer-events: none;
   opacity: var(--grain-alpha);
@@ -51,489 +57,197 @@ img { max-width: 100%; display: block; }
   background-repeat: repeat;
 }
 
-/* --- language swap: text drifts, it doesn't snap ------------------------ */
-.t {
-  display: inline;
-  transition: opacity var(--dur-standard) var(--ease-standard);
-}
+/* language swap: text drifts out and settles back, it doesn't snap */
+.t { display: inline; transition: opacity var(--dur-standard) var(--ease-standard); }
 .t--out { opacity: 0; }
 
-/* --- app frame ---------------------------------------------------------- */
-.app {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 100dvh;
-  overflow: hidden;
-}
+/* ================================================================== frame */
+
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100dvh; overflow: hidden; }
 
 .top { display: flex; flex-direction: column; }
-
 .head {
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--s-4);
-  padding: var(--s-3) var(--s-5);
-  min-height: 52px;
+  padding: var(--s-4) var(--s-5);
+  min-height: 48px;
 }
-.is-working .head { border-bottom: var(--hair) solid var(--rule); }
-.head__left, .head__right { display: flex; align-items: center; gap: var(--s-3); }
+.head__left, .head__right { display: flex; align-items: center; gap: var(--s-4); }
 
 .mark { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); }
-.mark__glyph { width: 17px; height: 17px; overflow: visible; }
-/* the slug sits between the plates — it's the thing being pressed */
-.mark__slug {
-  fill: var(--signal);
-  transform-origin: center;
-  animation: slug-settle var(--dur-ceremony) var(--ease-entrance) both;
-}
-@keyframes slug-settle {
-  from { transform: scaleY(1.9); opacity: 0; }
-  to   { transform: scaleY(1);   opacity: 1; }
-}
+.mark__glyph { width: 15px; height: 15px; }
+/* the slug between the plates settles once, on load, and is never seen again */
+.mark__slug { animation: slug var(--dur-ceremony) var(--ease-entrance) both; transform-origin: center; }
+@keyframes slug { from { transform: scaleY(2.2); opacity: 0; } to { transform: none; opacity: 1; } }
 .mark__word {
-  font-family: var(--font-display);
-  font-variation-settings: 'opsz' 20, 'wght' 500, 'SOFT' 30, 'WONK' 1;
-  font-size: var(--t-lead);
-  letter-spacing: -0.012em;
+  font-size: var(--t-small); font-weight: 500; letter-spacing: -0.005em;
 }
 
 .main { min-height: 0; overflow: hidden; }
 
-/* ============================================================ empty state */
+.ghost {
+  color: var(--ink-2);
+  transition: color var(--dur-micro) var(--ease-standard);
+}
+.ghost:hover { color: var(--ink); }
 
-.empty {
-  height: 100%;
-  display: grid; place-items: center;
-  padding: var(--s-5);
-}
-
-.sheet {
-  position: relative;
-  width: min(560px, 100%);
-  padding: var(--s-8) var(--s-7) var(--s-6);
-  background: var(--paper-raised);
-  border-radius: var(--r-sheet);
-  /* letterpress: a sheet resting in a tray, not a card floating over a page */
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.55),
-    0 1px 0 var(--paper-sunk),
-    0 0 0 var(--hair) var(--rule);
-  overflow: hidden;
-  transition:
-    transform var(--dur-standard) var(--ease-standard),
-    box-shadow var(--dur-standard) var(--ease-standard),
-    background-color var(--dur-standard) var(--ease-standard);
-  animation: sheet-in var(--dur-ceremony) var(--ease-entrance) both;
-}
-@keyframes sheet-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* a lamp above the bench: trails the pointer, never tracks it exactly */
-.sheet__light {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(
-    340px circle at var(--lx, 50%) var(--ly, 50%),
-    var(--signal-wash), transparent 68%);
-  opacity: 0.9;
-  transition: opacity var(--dur-entrance) var(--ease-standard);
-}
-
-/* the hairline breathes — a luminance drift, never a scale or a pulse */
-.sheet__edge {
-  position: absolute; inset: 0; pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 var(--hair) var(--rule-strong);
-  animation: breathe 6s var(--ease-glide) infinite;
-}
-@keyframes breathe {
-  0%, 100% { opacity: 0.42; }
-  50%      { opacity: 0.78; }
-}
-
-/* dragging over it: the sheet takes an impression and sinks */
-.sheet.is-over {
-  transform: translateY(1px);
-  background: var(--paper-sunk);
-  box-shadow:
-    inset 0 2px 5px rgb(23 20 18 / 0.09),
-    0 0 0 var(--hair) var(--rule-strong);
-}
-.sheet.is-over .sheet__edge { animation: none; opacity: 1; }
-.sheet.is-over .sheet__light { opacity: 1; }
-
-.sheet__body { position: relative; display: grid; gap: var(--s-4); justify-items: start; }
-
-.sheet__title {
-  font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 400, 'SOFT' 42, 'WONK' 1;
-  font-size: clamp(2rem, 5.2vw, var(--t-large));
-  line-height: 1.04;
-  letter-spacing: -0.022em;
-  margin-top: var(--s-2);
-  text-wrap: balance;
-}
-.sheet__lede {
-  color: var(--ink-soft);
-  font-size: var(--t-body);
-  max-width: 42ch;
-  line-height: 1.55;
-}
-.sheet__hint { color: var(--ink-faint); font-size: var(--t-meta); }
-.sheet__formats {
-  position: relative;
-  margin-top: var(--s-6);
-  padding-top: var(--s-4);
-  border-top: var(--hair) solid var(--rule);
-  color: var(--ink-faint);
-  font-size: var(--t-micro);
-  letter-spacing: 0.06em;
-}
-
-/* ================================================================ buttons */
-
-.btn {
-  --btn-bg: transparent;
+/* The one filled shape in the app. Round, white, and reserved for the action
+   you actually came here to take. */
+.pill {
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 0.5ch;
-  min-height: 40px;
-  padding: 0 var(--s-5);
-  border-radius: var(--r-pill);        /* the only round thing on the screen */
-  background: var(--btn-bg);
-  font-size: var(--t-small);
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  height: 38px; padding: 0 var(--s-6);
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--void);
+  font-size: var(--t-small); font-weight: 500; letter-spacing: -0.008em;
   cursor: pointer;
   transition:
     transform var(--dur-micro) var(--ease-standard),
-    background-color var(--dur-micro) var(--ease-standard),
-    color var(--dur-micro) var(--ease-standard),
-    box-shadow var(--dur-micro) var(--ease-standard);
+    opacity var(--dur-micro) var(--ease-standard);
 }
-.btn--primary {
-  --btn-bg: var(--ink);
-  color: var(--paper-raised);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
-}
-.btn--primary:hover { --btn-bg: var(--signal-sunk); }
-/* press = depress. 1px of travel, no scale. */
-.btn:active { transform: translateY(1px); }
-.btn--ghost {
-  color: var(--ink-soft);
-  box-shadow: inset 0 0 0 var(--hair) var(--rule);
-}
-.btn--ghost:hover { color: var(--ink); box-shadow: inset 0 0 0 var(--hair) var(--rule-strong); }
+.pill:active { transform: scale(0.972); opacity: 0.86; }
+.pill--lg { height: 44px; padding: 0 var(--s-7); font-size: var(--t-body); }
 
-.chip {
-  height: 28px; padding: 0 var(--s-3);
-  border-radius: var(--r-pill);
-  font-size: var(--t-meta);
-  color: var(--ink-soft);
-  box-shadow: inset 0 0 0 var(--hair) var(--rule);
-  transition: color var(--dur-micro) var(--ease-standard),
-              box-shadow var(--dur-micro) var(--ease-standard);
-}
-.chip:hover { color: var(--ink); box-shadow: inset 0 0 0 var(--hair) var(--rule-strong); }
+/* ============================================================ empty state */
 
-/* ========================================================== language menu */
+.empty {
+  position: relative;
+  height: 100%;
+  display: grid; place-items: center;
+  padding: var(--s-6);
+  text-align: center;
+}
+/* a lamp over the bench: it trails the pointer instead of tracking it */
+.empty__light {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(520px circle at var(--lx, 50%) var(--ly, 50%),
+              rgb(255 255 255 / 0.055), transparent 62%);
+  transition: opacity var(--dur-entrance) var(--ease-standard);
+}
+@media (prefers-color-scheme: light) {
+  .empty__light { background: radial-gradient(520px circle at var(--lx,50%) var(--ly,50%),
+                  rgb(0 0 0 / 0.045), transparent 62%); }
+}
+/* dragging: a hairline draws itself around the whole screen */
+.empty__edge {
+  position: absolute; inset: var(--s-3); pointer-events: none;
+  border: var(--hair) solid var(--ink);
+  opacity: 0; transform: scale(1.004);
+  transition: opacity var(--dur-standard) var(--ease-standard),
+              transform var(--dur-standard) var(--ease-standard);
+}
+.empty.is-over .empty__edge { opacity: 0.5; transform: none; }
+.empty.is-over .empty__light { opacity: 1.6; }
+
+.empty__body {
+  position: relative;
+  display: grid; gap: var(--s-4); justify-items: center;
+  max-width: 30rem;
+  animation: rise var(--dur-ceremony) var(--ease-entrance) both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.empty__title {
+  font-size: clamp(2.25rem, 6.5vw, 3.75rem);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -0.042em;
+  text-wrap: balance;
+}
+.empty__lede {
+  color: var(--ink-2);
+  font-size: var(--t-lead);
+  line-height: 1.5;
+  letter-spacing: -0.014em;
+  max-width: 34ch;
+}
+.empty__hint { color: var(--ink-3); margin-top: var(--s-1); }
+.empty__formats {
+  position: absolute; bottom: var(--s-6); left: 50%; transform: translateX(-50%);
+  color: var(--ink-4); font-size: var(--t-micro); letter-spacing: 0.1em; white-space: nowrap;
+}
+
+/* ============================================================= lang menu */
 
 .lang { position: relative; }
-.lang__trigger {
-  display: inline-flex; align-items: center; gap: 0.45rem;
-  height: 28px; padding: 0 var(--s-2) 0 var(--s-3);
-  border-radius: var(--r-pill);
-  font-size: var(--t-meta);
-  color: var(--ink-soft);
-  transition: color var(--dur-micro) var(--ease-standard);
-}
-.lang__trigger:hover { color: var(--ink); }
-.lang__caret { transition: transform var(--dur-standard) var(--ease-standard); }
-.lang__trigger[aria-expanded='true'] .lang__caret { transform: rotate(180deg); }
+.lang__trigger { color: var(--ink-2); transition: color var(--dur-micro) var(--ease-standard); }
+.lang__trigger:hover, .lang__trigger[aria-expanded='true'] { color: var(--ink); }
 
 .lang__sheet {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 40;
-  min-width: 232px;
-  padding: var(--s-1);
-  background: var(--paper-raised);
-  border-radius: var(--r-panel);
-  box-shadow: 0 0 0 var(--hair) var(--rule), 0 8px 26px -18px rgb(23 20 18 / 0.5);
-  opacity: 0; visibility: hidden;
-  transform: translateY(-3px);
+  position: absolute; top: calc(100% + 12px); right: 0; z-index: 40;
+  min-width: 216px; padding: var(--s-2) 0;
+  background: var(--surface);
+  border-radius: var(--r-well);
+  box-shadow: 0 0 0 var(--hair) var(--line);
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
   transition:
     opacity var(--dur-standard) var(--ease-standard),
     transform var(--dur-standard) var(--ease-standard),
     visibility 0s linear var(--dur-standard);
 }
-.lang__sheet.is-open {
-  opacity: 1; visibility: visible; transform: none;
-  transition-delay: 0s;
-}
+.lang__sheet.is-open { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 .lang__row {
   position: relative;
-  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
-  column-gap: var(--s-3);
-  width: 100%;
-  padding: 0.5rem var(--s-3);
-  border-radius: 1px;
+  display: grid; gap: 1px;
+  width: 100%; padding: 0.5rem var(--s-4);
   text-align: left;
-  opacity: 0;
-  transform: translateY(-2px);
+  opacity: 0; transform: translateY(-3px);
   transition:
     opacity var(--dur-standard) var(--ease-standard),
     transform var(--dur-standard) var(--ease-standard),
     background-color var(--dur-micro) var(--ease-standard);
 }
-.lang__sheet.is-open .lang__row {
-  opacity: 1; transform: none;
-  transition-delay: calc(var(--i) * 18ms);
+.lang__sheet.is-open .lang__row { opacity: 1; transform: none; transition-delay: calc(var(--i) * 16ms); }
+.lang__row:hover { background: var(--surface-2); }
+.lang__native { font-size: var(--t-small); color: var(--ink-2); transition: color var(--dur-micro) var(--ease-standard); }
+.lang__row:hover .lang__native { color: var(--ink); }
+.lang__english { color: var(--ink-4); }
+/* active language: a white rule in the left margin. no checkmark. */
+.lang__row[aria-selected='true']::before {
+  content: ''; position: absolute; left: 0; top: 0.55rem; bottom: 0.55rem;
+  width: 2px; background: var(--ink);
 }
-.lang__row:hover { background: var(--paper-sunk); }
-.lang__native { font-size: var(--t-small); }
-.lang__english { font-size: var(--t-micro); color: var(--ink-faint); grid-column: 1; }
-.lang__check {
-  grid-column: 2; grid-row: 1 / span 2;
-  align-self: center; color: var(--signal);
-  opacity: 0; transform: translateX(-2px);
-  transition: opacity var(--dur-standard) var(--ease-standard),
-              transform var(--dur-standard) var(--ease-standard);
-}
-.lang__row[aria-selected='true'] .lang__check { opacity: 1; transform: none; }
+.lang__row[aria-selected='true'] .lang__native { color: var(--ink); }
 
-/* ================================================================== bench */
+/* =================================================================== bench */
 
 .bench {
   display: grid;
-  grid-template-columns: var(--rail) 1fr;
-  height: 100%;
-  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+  height: 100%; min-height: 0;
+  gap: var(--s-3);
+  padding-top: var(--s-2);
 }
 
-.rail {
-  display: flex; flex-direction: column;
-  min-height: 0;
-  border-right: var(--hair) solid var(--rule);
-  animation: rail-in var(--dur-entrance) var(--ease-entrance) both;
-}
-@keyframes rail-in {
-  from { opacity: 0; transform: translateX(-6px); }
-  to   { opacity: 1; transform: none; }
-}
-.rail__scroll {
-  flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-5);
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
+/* the photograph gets whatever is left, and it is always the largest thing */
+.viewer {
+  min-height: 180px;
+  display: grid; place-items: center;
+  padding: 0 var(--s-5);
+  overflow: hidden;
 }
 
-.rail__foot {
-  display: grid; gap: var(--s-2);
-  padding: var(--s-4) var(--s-5);
-  border-top: var(--hair) solid var(--rule);
-}
-.rail__foot .btn { width: 100%; }
-.rail__foot-row { display: flex; gap: var(--s-2); }
-.rail__foot-row .btn { flex: 1; }
-
-.group + .group { margin-top: var(--s-5); }
-.group__label {
-  font-size: var(--t-micro);
-  font-weight: 500;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: var(--s-3);
-}
-.group__body { border-top: var(--hair) solid var(--rule); }
-
-.row { padding: var(--s-4) 0; border-bottom: var(--hair) solid var(--rule); }
-.row--pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
-.row__head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: var(--s-3); margin-bottom: var(--s-3);
-}
-.row__label { font-size: var(--t-small); color: var(--ink-soft); }
-.row__value { font-size: var(--t-small); font-family: var(--font-mono); }
-.row__value--quiet { color: var(--ink-faint); font-size: var(--t-meta); }
-.row__note { margin-top: var(--s-2); font-size: var(--t-micro); color: var(--ink-faint); }
-
-.readout {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
-  margin-top: var(--s-4);
-  font-size: var(--t-micro);
-  color: var(--ink-faint);
-}
-.readout__sep { opacity: 0.55; }
-
-/* the one margin mark. a rule, not a fill — a correction in red pencil. */
-.warn {
-  margin-top: var(--s-4);
-  padding: var(--s-3) 0 var(--s-3) var(--s-3);
-  border-left: 2px solid var(--signal);
-}
-.warn__text { font-size: var(--t-meta); color: var(--ink-soft); line-height: 1.45; }
-.warn__act {
-  margin-top: var(--s-2);
-  font-size: var(--t-meta); color: var(--signal);
-  text-decoration: underline; text-underline-offset: 3px;
-  text-decoration-thickness: from-font;
-}
-
-/* ================================================================= slider */
-
-.sl__lane { position: relative; height: 22px; display: flex; align-items: center; }
-.sl__track {
-  position: absolute; inset-inline: 0; height: var(--hair);
-  background: var(--rule-strong);
-}
-.sl__fill {
-  position: absolute; left: 0; width: var(--p); height: var(--hair);
-  background: var(--ink);
-  transition: width var(--dur-micro) var(--ease-glide);
-}
-.sl__thumb {
-  position: absolute; left: var(--p);
-  width: 13px; height: 13px; margin-left: -6.5px;
-  border-radius: var(--r-pill);
-  background: var(--paper-raised);
-  /* a small pressed disc, not a floating ball */
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 var(--hair) var(--rule-strong);
-  transition:
-    left var(--dur-micro) var(--ease-glide),
-    box-shadow var(--dur-standard) var(--ease-standard);
-  pointer-events: none;
-}
-.sl.is-live .sl__thumb { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 1.5px var(--ink); }
-.sl__input {
-  position: absolute; inset: -10px 0; width: 100%; height: calc(100% + 20px);
-  opacity: 0; cursor: ew-resize; margin: 0;
-}
-/* the value lifts out of the thumb while you drag, then settles back into the head */
-.sl__bubble {
-  position: absolute; left: var(--p); bottom: 100%;
-  transform: translate(-50%, 2px);
-  font-size: var(--t-micro);
-  color: var(--ink);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--dur-standard) var(--ease-standard),
-    transform var(--dur-standard) var(--ease-standard),
-    left var(--dur-micro) var(--ease-glide);
-}
-.sl.is-live .sl__bubble { opacity: 1; transform: translate(-50%, -4px); }
-
-/* ============================================================== segmented */
-
-.seg {
-  position: relative;
-  display: block;
-  padding: 3px;
-  border-radius: var(--r-panel);
-  background: var(--paper-sunk);
-  box-shadow: inset 0 1px 2px rgb(23 20 18 / 0.06);
-  isolation: isolate;
-}
-.seg__ink {
-  position: absolute; top: 3px; bottom: 3px; left: 0;
-  border-radius: 1px;
-  background: var(--ink);
-  z-index: 0;
-  transition:
-    transform var(--dur-standard) var(--ease-standard),
-    width var(--dur-standard) var(--ease-standard);
-}
-.seg__layer {
-  position: relative;
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  z-index: 1;
-  pointer-events: none;
-}
-/* the paper copy of the labels, clipped to exactly the ink block: each label
-   wipes ink → paper in place as the block travels over it */
-.seg__layer--inv {
-  position: absolute; inset: 0;
-  padding: 3px;
-  color: var(--paper-raised);
-  z-index: 2;
-  transition: clip-path var(--dur-standard) var(--ease-standard);
-}
-.seg__label {
-  padding: 0.45rem 0.25rem;
-  text-align: center;
-  font-size: var(--t-meta);
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  white-space: nowrap;
-}
-.seg__layer:not(.seg__layer--inv) .seg__label { color: var(--ink-soft); }
-.seg__hits {
-  position: absolute; inset: 3px; z-index: 3;
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-}
-.seg__hit { border-radius: 1px; }
-
-/* =========================================================== number field */
-
-.nf { display: grid; gap: 0.4rem; }
-.nf__label { font-size: var(--t-meta); color: var(--ink-soft); }
-.nf__box {
-  display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.42rem var(--s-2);
-  border-radius: var(--r-panel);
-  background: var(--paper-sunk);
-  box-shadow: inset 0 1px 2px rgb(23 20 18 / 0.05);
-  transition: box-shadow var(--dur-standard) var(--ease-standard);
-}
-.nf__box:focus-within { box-shadow: inset 0 1px 2px rgb(23 20 18 / 0.05), 0 0 0 1px var(--ink); }
-.nf__input {
-  width: 100%; min-width: 0; border: 0; background: none; outline: none;
-  font-size: var(--t-small);
-}
-.nf__input::placeholder { color: var(--ink-faint); }
-.nf__suffix { font-size: var(--t-micro); color: var(--ink-faint); }
-
-/* ================================================================== stage */
-
-.stage {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  min-height: 0;
-  padding: var(--s-5) var(--s-5) 0;
-  gap: var(--s-4);
-}
-/* A floor, so the viewing area can never be squeezed out of existence by the
-   readout and the strip below it. Above the floor it simply takes what's left. */
-.stage__view {
-  min-height: 220px;
-  display: grid; place-items: center; overflow: hidden;
-}
-
-/* ================================================================ compare */
+/* ================================================================= compare */
 
 .cmp {
   position: relative;
-  max-width: 100%;
-  max-height: 100%;
-  min-height: 0;
-  display: grid;
-  overflow: hidden;
+  aspect-ratio: var(--ar, 3 / 2);
+  max-width: 100%; max-height: 100%; min-height: 0;
+  margin: auto;
+  display: grid; overflow: hidden;
   border-radius: var(--r-tile);
-  touch-action: none;
-  cursor: ew-resize;
+  touch-action: none; cursor: ew-resize;
   opacity: 0;
   transition: opacity var(--dur-entrance) var(--ease-standard);
 }
 .cmp.is-ready { opacity: 1; }
-.cmp__stage { position: relative; display: grid; min-height: 0; }
+.cmp__stage { position: relative; display: grid; min-height: 0; height: 100%; }
 .cmp__img {
   grid-area: 1 / 1;
-  max-height: 100%;
-  width: auto; max-width: 100%;
-  object-fit: contain;
-  user-select: none;
+  width: 100%; height: 100%;
+  object-fit: cover; user-select: none;
 }
 .cmp__after {
-  grid-area: 1 / 1;
-  display: grid;
+  grid-area: 1 / 1; display: grid;
   clip-path: inset(0 0 0 var(--x));
   transition: clip-path var(--dur-micro) var(--ease-glide);
 }
@@ -541,364 +255,395 @@ img { max-width: 100%; display: block; }
 
 .cmp__seam {
   position: absolute; top: 0; bottom: 0; left: var(--x);
-  width: var(--hair);
-  background: var(--signal);
-  box-shadow: 0 0 8px -1px var(--signal);
+  width: var(--hair); background: #fff;
   transform: translateX(-0.5px);
-  transition: left var(--dur-micro) var(--ease-glide);
+  opacity: 0.45;
+  transition: opacity var(--dur-standard) var(--ease-standard),
+              left var(--dur-micro) var(--ease-glide);
 }
-.cmp.is-dragging .cmp__seam { transition: none; }
+.cmp:hover .cmp__seam, .cmp.is-dragging .cmp__seam { opacity: 0.9; }
+.cmp.is-dragging .cmp__seam { transition: opacity var(--dur-standard) var(--ease-standard); }
 
 .cmp__handle {
   position: absolute; top: 50%; left: var(--x);
-  /* the hit area is generous; the visible mark is not */
-  width: 48px; height: 48px; margin: -24px 0 0 -24px;
-  display: grid; place-items: center;
-  border-radius: var(--r-pill);
-  cursor: ew-resize;
+  width: 52px; height: 52px; margin: -26px 0 0 -26px;
+  display: grid; place-items: center; cursor: ew-resize;
   transition: left var(--dur-micro) var(--ease-glide);
 }
 .cmp.is-dragging .cmp__handle { transition: none; }
-/* The grip sits on photographic content, not on the app surface, so it does not
-   follow the theme — it stays paper-light with an ink hairline, which reads on
-   almost any image. Only its ring answers to state. */
+/* the grip sits on photographic content, so it doesn't follow the theme:
+   always white, always legible, whatever is behind it */
 .cmp__grip {
-  width: 22px; height: 22px;
-  border-radius: var(--r-pill);
-  background: #F6F2EA;
-  box-shadow: 0 0 0 1px rgb(23 20 18 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.7);
-  transition: box-shadow var(--dur-standard) var(--ease-standard),
-              transform var(--dur-standard) var(--ease-standard);
+  width: 20px; height: 20px; border-radius: var(--r-pill);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.12);
+  transition: transform var(--dur-standard) var(--ease-standard),
+              box-shadow var(--dur-standard) var(--ease-standard);
 }
-.cmp__handle:hover .cmp__grip,
-.cmp.is-dragging .cmp__grip {
-  box-shadow: 0 0 0 2px var(--signal), inset 0 1px 0 rgb(255 255 255 / 0.7);
-}
-/* the seam is faint until you reach for it, then it commits */
-.cmp__seam { opacity: 0.55; transition: opacity var(--dur-standard) var(--ease-standard),
-                                        left var(--dur-micro) var(--ease-glide); }
-.cmp:hover .cmp__seam, .cmp.is-dragging .cmp__seam { opacity: 1; }
+.cmp__handle:hover .cmp__grip { transform: scale(1.12); }
+.cmp.is-dragging .cmp__grip { transform: scale(1.2); box-shadow: 0 0 0 5px rgb(0 0 0 / 0.16); }
 
 .cmp__tag {
   position: absolute; bottom: var(--s-3);
-  font-size: var(--t-micro);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--paper-raised);
-  mix-blend-mode: difference;
+  color: #fff; mix-blend-mode: difference;
   opacity: 0;
   transition: opacity var(--dur-standard) var(--ease-standard);
 }
-.cmp:hover .cmp__tag, .cmp.is-dragging .cmp__tag { opacity: 0.75; }
+.cmp:hover .cmp__tag, .cmp.is-dragging .cmp__tag { opacity: 0.8; }
 .cmp__tag--l { left: var(--s-3); }
 .cmp__tag--r { right: var(--s-3); }
 
-/* ================================================================= result */
+/* ================================================================== result */
 
-.result {
-  display: grid; justify-items: center; gap: 0.15rem;
-  padding-bottom: var(--s-2);
-}
-.result__eyebrow {
-  font-size: var(--t-micro);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
+.result { display: grid; justify-items: center; gap: 0.35rem; padding: 0 var(--s-5); }
 .result__figure {
-  font-family: var(--font-display);
-  font-variation-settings: 'opsz' 96, 'wght' 380, 'SOFT' 20, 'WONK' 1;
-  font-size: clamp(2.5rem, 7vw, var(--t-hero));
-  line-height: 0.95;
-  letter-spacing: -0.035em;
+  font-size: clamp(2.125rem, 5.2vw, 3.25rem);
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
 }
-/* the whole ceremony: one hairline drawing itself, once the queue settles */
-.result__rule {
-  width: 0; height: var(--hair);
-  background: var(--rule-strong);
-  margin: 0.55rem 0 0.4rem;
-  transition: width var(--dur-ceremony) var(--ease-standard);
+.result__figure.is-grew { color: var(--alert); font-size: clamp(2rem, 7vw, 3rem); }
+.result__detail {
+  display: inline-flex; align-items: center; gap: 0.6ch;
+  font-size: var(--t-meta); color: var(--ink-3);
 }
-.result.is-settled .result__rule { width: 128px; }
-.result__figure.is-grew { color: var(--signal); font-size: clamp(2rem, 5vw, var(--t-large)); }
-.result__detail { font-size: var(--t-micro); color: var(--ink-faint); }
-.result__arrow, .result__sep { margin: 0 0.45em; opacity: 0.6; }
+.result__label {
+  position: relative; margin-left: 0.5rem; padding-left: 0.75rem;
+  color: var(--ink-4);
+}
+/* the entire ceremony: one hairline drawing itself, once the queue settles */
+.result__label::before {
+  content: ''; position: absolute; left: 0; top: 50%;
+  width: var(--hair); height: 0; background: var(--ink-4);
+  transform: translateY(-50%);
+  transition: height var(--dur-ceremony) var(--ease-standard);
+}
+.result.is-settled .result__label::before { height: 11px; }
 
-/* =============================================================== odometer */
+/* ================================================================ odometer */
 
 .odo { display: inline-flex; align-items: baseline; }
-.odo__win {
-  display: inline-block;
-  height: 1em; line-height: 1;
-  overflow: hidden;
-  vertical-align: baseline;
-}
+.odo__win { display: inline-block; height: 1em; line-height: 1; overflow: hidden; vertical-align: baseline; }
 .odo__reel {
-  display: flex; flex-direction: column;
-  will-change: transform;
+  display: flex; flex-direction: column; will-change: transform;
   transition: transform var(--dur-standard) var(--ease-glide);
 }
 .odo__reel > span { height: 1em; line-height: 1; }
 .odo__fixed { display: inline-block; }
-.odo.is-grew { color: var(--signal); }
+.odo.is-grew { color: var(--alert); }
+
+/* ================================================================= console */
+
+.console { display: grid; gap: var(--s-3); padding: 0 var(--s-5); }
+
+/* a fold that grows instead of appearing — 0fr → 1fr animates cleanly and
+   nothing below it jumps */
+.fold {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-standard) var(--ease-standard),
+              opacity var(--dur-standard) var(--ease-standard);
+  opacity: 0;
+}
+.fold.is-open { grid-template-rows: 1fr; opacity: 1; }
+.fold__inner { overflow: hidden; min-height: 0; }
+.fold__toggle {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  color: var(--ink-4);
+  transition: color var(--dur-micro) var(--ease-standard);
+}
+.fold__toggle:hover { color: var(--ink-2); }
+.fold__caret { display: inline-grid; transition: transform var(--dur-standard) var(--ease-standard); }
+.fold__toggle[aria-expanded='true'] { color: var(--ink-2); }
+.fold__toggle[aria-expanded='true'] .fold__caret { transform: rotate(180deg); }
+
+/* ---- the slider: the signature control -------------------------------- */
+.sl { display: grid; justify-items: center; gap: var(--s-2); }
+.sl__value {
+  font-size: var(--t-value);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1;
+  transition: transform var(--dur-standard) var(--ease-standard),
+              color var(--dur-standard) var(--ease-standard);
+}
+.sl.is-live .sl__value { transform: translateY(-2px) scale(1.06); }
+
+.sl__lane { position: relative; width: 100%; height: 30px; display: flex; align-items: center; }
+.sl__track {
+  position: absolute; inset-inline: 0; height: var(--hair);
+  background: var(--line-2);
+  transition: background-color var(--dur-standard) var(--ease-standard);
+}
+.sl.is-live .sl__track { background: var(--ink-4); }
+/* a tick at the default. you can feel your way back to it; nothing snaps. */
+.sl__detent {
+  position: absolute; width: var(--hair); height: 7px;
+  background: var(--line-2); transform: translateX(-0.5px);
+}
+.sl__knob {
+  position: absolute; left: var(--p);
+  width: var(--knob); height: var(--knob); margin-left: calc(var(--knob) / -2);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  pointer-events: none;
+  transition: left var(--dur-micro) var(--ease-glide),
+              transform var(--dur-standard) var(--ease-standard);
+}
+.sl__lane:hover .sl__knob { transform: scale(1.08); }
+.sl.is-live .sl__knob, .sl.is-live .sl__lane:hover .sl__knob { transform: scale(1.18); }
+.sl__input {
+  position: absolute; inset: -8px 0; width: 100%; height: calc(100% + 16px);
+  opacity: 0; cursor: ew-resize; margin: 0;
+}
+.sl__name { color: var(--ink-3); }
+
+/* ---- tabs ------------------------------------------------------------- */
+.console__row { display: flex; justify-content: center; }
+.tabs { position: relative; display: inline-block; isolation: isolate; }
+.tabs__pill {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  border-radius: var(--r-pill); background: var(--ink); z-index: 0;
+  transition: transform var(--dur-standard) var(--ease-standard),
+              width var(--dur-standard) var(--ease-standard);
+}
+.tabs__layer {
+  position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  z-index: 1; pointer-events: none;
+}
+/* the inverted copy, clipped to exactly the pill: each label wipes in place as
+   the pill travels over it, rather than flipping colour when it arrives */
+.tabs__layer--inv {
+  position: absolute; inset: 0; color: var(--void); z-index: 2;
+  transition: clip-path var(--dur-standard) var(--ease-standard);
+}
+.tabs__label {
+  padding: 0.5rem 0.95rem; text-align: center; white-space: nowrap;
+  font-size: var(--t-meta); font-weight: 500; letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+.tabs__layer--inv .tabs__label { color: var(--void); }
+.tabs__hits { position: absolute; inset: 0; z-index: 3; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.tabs__hit { border-radius: var(--r-pill); }
+
+/* ---- fields ----------------------------------------------------------- */
+.console__row--fields {
+  padding-top: var(--s-2);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+  max-width: 460px; margin: 0 auto; width: 100%;
+}
+.nf { display: grid; gap: 0.35rem; justify-items: center; }
+.nf__label { color: var(--ink-3); }
+.nf__box {
+  display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+  width: 100%; padding: 0.4rem var(--s-2);
+  border-radius: var(--r-well);
+  background: var(--surface);
+  transition: box-shadow var(--dur-standard) var(--ease-standard),
+              background-color var(--dur-standard) var(--ease-standard);
+}
+.nf__box:focus-within { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+.nf__input {
+  width: 100%; min-width: 0; border: 0; background: none; outline: none;
+  text-align: center; font-size: var(--t-small);
+}
+.nf__input::placeholder { color: var(--ink-4); }
+.nf__suffix { font-size: var(--t-micro); color: var(--ink-4); }
+
+.console__readout {
+  text-align: center; font-size: var(--t-micro);
+  color: var(--ink-4); letter-spacing: 0.04em;
+}
+.console__k { color: var(--ink-3); }
+
+/* the only place the alert colour appears in the entire app */
+.alert {
+  max-width: 460px; margin: 0 auto;
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--alert);
+}
+.alert__text { font-size: var(--t-meta); color: var(--ink-2); line-height: 1.45; }
+.alert__act {
+  margin-top: 0.35rem; font-size: var(--t-meta); color: var(--alert);
+  text-decoration: underline; text-underline-offset: 3px;
+}
 
 /* =================================================================== strip */
 
 .strip {
-  display: flex; align-items: stretch; gap: var(--s-3);
-  padding: var(--s-3) 0 var(--s-5);
+  display: flex; align-items: flex-start; gap: var(--s-2);
+  padding: 0 var(--s-5);
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-  border-top: var(--hair) solid var(--rule);
+  scrollbar-width: none;
+  /* centred while the row fits, and left-anchored the moment it overflows —
+     without `safe`, flex centring hides the first tiles past the scroll origin */
+  justify-content: flex-start;
+  justify-content: safe center;
 }
+.strip::-webkit-scrollbar { display: none; }
 .strip__cell {
   flex: 0 0 auto;
-  animation: cell-in var(--dur-entrance) var(--ease-entrance) both;
+  animation: rise var(--dur-entrance) var(--ease-entrance) both;
   animation-delay: calc(var(--i) * var(--stagger));
-}
-@keyframes cell-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: none; }
 }
 
 .tile {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  width: 168px;
-  padding-top: 2px;
-  /* done = lighter = it settles two pixels up. subliminal, and the whole thesis. */
+  position: relative; width: 78px;
+  /* done = lighter, so it settles two pixels up. subliminal, and it is the
+     whole thesis of the product expressed as movement. */
   transform: translateY(0);
   transition: transform 400ms var(--ease-standard);
 }
 .tile--done { transform: translateY(-2px); }
 
-.tile__hit { grid-column: 1 / -1; display: grid; gap: 0.45rem; text-align: left; }
-
+.tile__hit { display: grid; gap: 0.4rem; width: 100%; text-align: center; }
+.tile__hit:hover .tile__img { opacity: 1; }
 .tile__frame {
-  position: relative;
-  display: block;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: var(--r-tile);          /* a photo is a rectangle */
-  background: var(--paper-sunk);
-  box-shadow: 0 0 0 var(--hair) var(--rule);
-  transition: box-shadow var(--dur-standard) var(--ease-standard);
+  position: relative; display: block;
+  aspect-ratio: 1; overflow: hidden;
+  border-radius: var(--r-tile);
+  background: var(--surface);
 }
-.tile.is-selected .tile__frame { box-shadow: 0 0 0 1.5px var(--ink); }
-
-/* THE DEVELOP REVEAL — the image resolving *is* the progress indicator.
-   No bar. Paper coming up in developer. */
+/* THE DEVELOP REVEAL — the image resolving is the progress indicator.
+   There is no bar. */
 .tile__img {
   width: 100%; height: 100%; object-fit: cover;
-  opacity: calc(0.42 + var(--p) * 0.58);
-  filter:
-    blur(calc((1 - var(--p)) * 7px))
-    saturate(calc(0.3 + var(--p) * 0.7))
-    contrast(calc(0.86 + var(--p) * 0.14));
-  transform: scale(calc(1 + (1 - var(--p)) * 0.012));
+  opacity: calc(0.28 + var(--p) * 0.72);
+  filter: blur(calc((1 - var(--p)) * 6px)) saturate(calc(0.25 + var(--p) * 0.75));
+  transform: scale(calc(1 + (1 - var(--p)) * 0.02));
   transition:
     opacity var(--dur-entrance) var(--ease-standard),
     filter var(--dur-entrance) var(--ease-standard),
     transform var(--dur-entrance) var(--ease-standard);
 }
-/* queued: the sheet hasn't been pressed. grain up, everything down. */
-.tile__grain {
-  position: absolute; inset: 0; pointer-events: none;
-  background: var(--paper-sunk);
-  opacity: calc((1 - var(--p)) * 0.22);
-  transition: opacity var(--dur-entrance) var(--ease-standard);
+/* selection is a white rule under the frame that slides, not a border box */
+.tile__mark {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: var(--ink);
+  transform: scaleX(0); transform-origin: center;
+  transition: transform var(--dur-standard) var(--ease-standard);
 }
-.tile--failed .tile__img { opacity: 0.3; filter: grayscale(1) blur(0); }
-/* failed: struck through. one diagonal hairline, no colour. */
+.tile.is-selected .tile__mark { transform: scaleX(1); }
+.tile--failed .tile__img { opacity: 0.24; filter: grayscale(1); }
 .tile__strike {
   position: absolute; inset: 0;
-  background: linear-gradient(
-    to bottom right,
-    transparent calc(50% - 0.5px), var(--ink-soft) calc(50% - 0.5px),
-    var(--ink-soft) calc(50% + 0.5px), transparent calc(50% + 0.5px));
-  opacity: 0.5;
+  background: linear-gradient(to bottom right,
+    transparent calc(50% - 0.5px), var(--ink-3) calc(50% - 0.5px),
+    var(--ink-3) calc(50% + 0.5px), transparent calc(50% + 0.5px));
 }
+.tile__figure { font-size: var(--t-meta); color: var(--ink); }
+.tile--queued .tile__figure, .tile--running .tile__figure { color: var(--ink-4); }
+.tile__status { color: var(--ink-4); }
+.tile__retry { color: var(--alert); text-decoration: underline; text-underline-offset: 3px; }
 
-.tile__meta { display: grid; gap: 0.1rem; }
-.tile__name {
-  font-size: var(--t-micro);
-  color: var(--ink-soft);
-  /* middle-ellipsis would need JS; keep the extension visible by clipping the head */
-  direction: rtl; text-align: left;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.tile__figure { font-size: var(--t-small); font-weight: 500; }
-.tile--queued .tile__figure, .tile--running .tile__figure { color: var(--ink-faint); font-weight: 400; }
-.tile__status { font-size: var(--t-micro); }
-
-.tile__line {
-  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2);
-}
-.tile__aside { font-size: var(--t-micro); color: var(--ink-faint); }
-.tile__act {
-  position: absolute; top: 6px; right: 6px;
-  display: grid; place-items: center;
-  width: 22px; height: 22px;
+.tile__x {
+  position: absolute; top: 4px; right: 4px;
+  display: grid; place-items: center; width: 18px; height: 18px;
   border-radius: var(--r-pill);
-  background: var(--paper-raised);
-  color: var(--ink-soft);
-  box-shadow: 0 0 0 var(--hair) var(--rule);
-  opacity: 0;
-  transform: translateY(-2px);
-  transition:
-    opacity var(--dur-standard) var(--ease-standard),
-    transform var(--dur-standard) var(--ease-standard),
-    color var(--dur-micro) var(--ease-standard);
+  background: rgb(0 0 0 / 0.55); color: #fff;
+  opacity: 0; transform: scale(0.85);
+  transition: opacity var(--dur-standard) var(--ease-standard),
+              transform var(--dur-standard) var(--ease-standard);
 }
-.tile:hover .tile__act, .tile__act:focus-visible { opacity: 1; transform: none; }
-.tile__act:hover { color: var(--ink); }
-.tile--failed .tile__act {
-  position: static; width: auto; height: auto; padding: 0;
-  opacity: 1; transform: none; background: none; box-shadow: none;
-  font-size: var(--t-micro); color: var(--signal);
-  text-decoration: underline; text-underline-offset: 3px;
-  justify-self: end;
-}
+.tile:hover .tile__x, .tile__x:focus-visible { opacity: 1; transform: none; }
 
 .strip__add {
-  flex: 0 0 auto;
-  width: 92px;
-  display: grid; place-content: center; gap: 0.3rem; justify-items: center;
-  aspect-ratio: 4 / 3;
-  align-self: start;
-  margin-top: 2px;
-  border-radius: var(--r-tile);
-  color: var(--ink-faint);
-  cursor: pointer;
-  box-shadow: inset 0 0 0 var(--hair) var(--rule);
+  flex: 0 0 auto; width: 78px; aspect-ratio: 1;
+  display: grid; place-items: center;
+  color: var(--ink-4); cursor: pointer;
+  box-shadow: inset 0 0 0 var(--hair) var(--line);
   transition: color var(--dur-standard) var(--ease-standard),
               box-shadow var(--dur-standard) var(--ease-standard);
 }
-.strip__add:hover { color: var(--ink-soft); box-shadow: inset 0 0 0 var(--hair) var(--rule-strong); }
-.strip__add-label { font-size: var(--t-micro); }
+.strip__add:hover { color: var(--ink-2); box-shadow: inset 0 0 0 var(--hair) var(--line-2); }
+.strip__add-glyph { font-size: 1.1rem; font-weight: 300; line-height: 1; }
+
+/* ==================================================================== dock */
+
+.dock {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: var(--s-3) var(--s-5) max(var(--s-4), env(safe-area-inset-bottom));
+}
+.dock__icon {
+  display: grid; place-items: center; width: 38px; height: 38px;
+  border-radius: var(--r-pill); color: var(--ink-2);
+  transition: color var(--dur-micro) var(--ease-standard),
+              transform var(--dur-micro) var(--ease-standard);
+}
+.dock__icon:first-child { justify-self: start; }
+.dock__icon:last-child { justify-self: end; }
+.dock__icon:hover:not([disabled]) { color: var(--ink); }
+.dock__icon:active:not([disabled]) { transform: scale(0.92); }
 
 /* ============================================================== status bar */
 
 .status {
   display: flex; align-items: center; gap: 0.55rem;
-  padding: 0 var(--s-5);
-  min-height: 34px;
-  border-top: var(--hair) solid var(--rule);
-  font-size: var(--t-micro);
-  color: var(--ink-faint);
-  letter-spacing: 0.02em;
+  padding: 0 var(--s-5) var(--s-2);
+  min-height: 26px;
+  color: var(--ink-4);
 }
 .status__spacer { flex: 1; }
-.status__dot { width: 2px; height: 2px; border-radius: 50%; background: currentColor; opacity: 0.5; }
-.status__sent { color: var(--ink-soft); }
-/* work in progress: a slow breath on the rail, not a spinner */
+.status__sep { opacity: 0.5; }
+.status__sent { color: var(--ink-3); }
 .status__pulse {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--ink-soft);
-  animation: breathe 1.8s var(--ease-glide) infinite;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--ink-3);
+  animation: pulse 1.8s var(--ease-glide) infinite;
 }
-.status__offline { display: inline-flex; align-items: center; gap: 0.4rem; margin-left: 0.55rem; }
-.status__blip { width: 5px; height: 5px; border-radius: 50%; background: var(--signal); }
+@keyframes pulse { 0%, 100% { opacity: 0.28; } 50% { opacity: 1; } }
 
-/* =============================================================== ephemera */
+/* ================================================================ ephemera */
 
-/* the download reward: the label becomes what you just saved, then goes away */
 .flash {
-  position: fixed; left: 50%; bottom: 52px; z-index: 60;
-  transform: translate(-50%, 4px);
-  padding: 0.4rem var(--s-4);
+  position: fixed; left: 50%; bottom: 84px; z-index: 60;
+  transform: translate(-50%, 6px);
+  padding: 0.45rem var(--s-4);
   border-radius: var(--r-pill);
-  background: var(--ink); color: var(--paper-raised);
-  font-size: var(--t-meta);
+  background: var(--ink); color: var(--void);
+  font-size: var(--t-meta); font-weight: 500;
   opacity: 0; pointer-events: none;
-  transition:
-    opacity var(--dur-standard) var(--ease-standard),
-    transform var(--dur-standard) var(--ease-standard);
+  transition: opacity var(--dur-standard) var(--ease-standard),
+              transform var(--dur-standard) var(--ease-standard);
 }
 .flash.is-on { opacity: 1; transform: translate(-50%, 0); }
 
 .update {
   display: flex; align-items: center; justify-content: center; gap: var(--s-3);
-  padding: 0.45rem var(--s-5);
-  border-bottom: var(--hair) solid var(--rule);
-  font-size: var(--t-meta);
-  color: var(--ink-soft);
-  animation: cell-in var(--dur-entrance) var(--ease-entrance) both;
+  padding: 0.5rem var(--s-5);
+  color: var(--ink-3);
+  animation: rise var(--dur-entrance) var(--ease-entrance) both;
 }
-.update__act {
-  color: var(--signal);
-  text-decoration: underline; text-underline-offset: 3px;
-}
+.update__act { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
-/* ================================================================= mobile */
+/* ================================================================== mobile */
 
-@media (max-width: 900px) {
-  /* One continuous column that scrolls as a single surface. Nested scroll areas
-     on a phone are a trap: you reach for the picture and move the panel. */
-  .main { overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
-  .bench { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
-
-  .stage {
-    grid-template-rows: auto auto auto;
-    overflow: visible;
-    padding: var(--s-3) var(--s-4) 0;
-    gap: var(--s-3);
-  }
-  .stage__view { height: auto; min-height: 0; overflow: visible; }
-  .cmp { max-height: none; }
-  .cmp__img { max-height: 46dvh; }
-
-  .rail {
-    grid-row: 2;
-    border-right: 0;
-    border-top: var(--hair) solid var(--rule);
-    max-height: none;
-    animation-name: cell-in;
-  }
-  .rail__scroll { overflow: visible; padding: var(--s-4); }
-  /* the primary action stays within reach of a thumb, whatever the scroll */
-  .rail__foot {
-    position: sticky; bottom: 0; z-index: 5;
-    background: var(--paper);
-    padding: var(--s-3) var(--s-4) max(var(--s-3), env(safe-area-inset-bottom));
-  }
-
-  .result__figure { font-size: clamp(2.25rem, 13vw, 3.5rem); }
-  .head { padding: var(--s-2) var(--s-4); }
-  .status { padding: 0 var(--s-4); }
-  .tile { width: 132px; }
-  .sheet { padding: var(--s-6) var(--s-5) var(--s-5); }
-  /* touch surfaces hide their own scrollbars; ours shouldn't add one back */
-  .strip { scrollbar-width: none; }
-  .strip::-webkit-scrollbar { display: none; }
+@media (max-width: 760px) {
+  .head { padding: var(--s-3) var(--s-4); }
+  .bench { gap: var(--s-3); }
+  .viewer, .console, .strip { padding-inline: var(--s-4); }
+  .status { padding: 0 var(--s-4) var(--s-2); }
+  .dock { padding: var(--s-2) var(--s-4) max(var(--s-3), env(safe-area-inset-bottom)); }
+  .console__row--fields { gap: var(--s-2); }
+  .tile, .strip__add { width: 64px; }
+  .empty__formats { display: none; }
 }
 
-@media (max-width: 560px) {
-  .status__cell:nth-of-type(3), .status__dot:nth-of-type(2) { display: none; }
-}
-
-/* ======================================================== reduced motion ==
-   Defined once, for the whole system. Everything still resolves — the interface
-   must read as finished, not as stripped. Transforms collapse to opacity; the
-   odometer sets its value; the develop reveal lands immediately.               */
+/* ========================================================= reduced motion ==
+   Defined once for the whole system. Everything still resolves — the interface
+   has to read as finished, not as stripped.                                  */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: var(--dur-micro) !important;
-    transition-property: opacity, color, background-color !important;
+    transition-property: opacity, color, background-color, clip-path !important;
   }
-  .sheet__edge { opacity: 0.6; }
-  .sheet__light { display: none; }
+  .empty__light { display: none; }
   .odo__reel { transition: none; }
-  /* The blur IS the progress indicator, so removing it entirely would leave a
-     reduced-motion user with no sense of progress at all. Motion goes; the
-     opacity ramp stays, because a fade is not motion. */
+  /* the blur IS the progress indicator, so it can't just be removed — motion
+     goes, the opacity ramp stays, because a fade is not motion */
   .tile__img { filter: none; transform: none; }
-  .tile__grain { transition-duration: var(--dur-micro) !important; }
-  .result__rule { width: 128px; }
+  .result__label::before { width: 6px; }
+  .tile__mark { transition: none; }
 }

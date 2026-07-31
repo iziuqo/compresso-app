@@ -1,0 +1,103 @@
+import { useState } from 'react';
+import { T, useI18n } from '../i18n';
+import { NumberField, Slider, Tabs, type Option } from './primitives';
+import type { Caps, Format, Params } from '../engine/types';
+import type { Job } from '../state/queue';
+
+/**
+ * The console: everything you can change, in one band under the picture.
+ *
+ * There is no inspector rail. A rail turns the picture into a thumbnail beside
+ * a form, and the picture is the whole point — so the controls sit below it, in
+ * the order you'd reach for them, and the image keeps the room.
+ */
+export function Console({
+  params, setParams, caps, selected,
+}: { params: Params; setParams: (p: Params) => void; caps: Caps; selected: Job | null }) {
+  const { t, percent, bytes } = useI18n();
+
+  const formats: Option<Format>[] = [
+    { value: 'auto', label: t('rail.auto') },
+    ...(caps.avif ? [{ value: 'avif' as Format, label: 'AVIF' }] : []),
+    { value: 'webp', label: 'WebP' },
+    { value: 'jpeg', label: 'JPEG' },
+    { value: 'png', label: 'PNG' },
+  ];
+
+  const [open, setOpen] = useState(false);
+  const out = selected?.out ?? null;
+  const grew = out ? out.savings < 0 : false;
+  const set = <K extends keyof Params>(k: K, v: Params[K]) => setParams({ ...params, [k]: v });
+  // A limit that's actually set can never be hidden behind a fold.
+  const hasLimits = params.maxWidth != null || params.maxHeight != null || params.maxSizeMB != null;
+
+  return (
+    <div className="console">
+      <Slider
+        label={t('rail.quality')}
+        value={params.quality}
+        min={0.3} max={1} step={0.01}
+        detent={0.8}
+        display={percent(params.quality)}
+        onChange={(v) => set('quality', v)}
+      />
+
+      <div className="console__row">
+        <Tabs options={formats} value={params.format} onChange={(v) => set('format', v)} label={t('rail.format')} />
+      </div>
+
+      {/* Size limits are the tool you reach for occasionally, so they stay folded
+          away — one thing on screen at a time. The row expands rather than
+          appearing, so nothing below it jumps. */}
+      <div className={`fold ${open || hasLimits ? 'is-open' : ''}`}>
+        <div className="fold__inner">
+          <div className="console__row console__row--fields">
+            <NumberField
+              label={t('rail.maxWidth')} value={params.maxWidth}
+              placeholder={t('rail.unset')} suffix="px" onChange={(v) => set('maxWidth', v)}
+            />
+            <NumberField
+              label={t('rail.maxHeight')} value={params.maxHeight}
+              placeholder={t('rail.unset')} suffix="px" onChange={(v) => set('maxHeight', v)}
+            />
+            <NumberField
+              label={t('rail.maxSize')} value={params.maxSizeMB}
+              placeholder={t('rail.unset')} suffix="MB" onChange={(v) => set('maxSizeMB', v)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="console__row">
+        <button
+          type="button"
+          className="fold__toggle label"
+          aria-expanded={open || hasLimits}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <T k="rail.dimensions" />
+          <span className="fold__caret" aria-hidden="true">
+            <svg width="8" height="5" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.1" fill="none" strokeLinecap="round" /></svg>
+          </span>
+        </button>
+      </div>
+
+      {out && (
+        <p className="console__readout mono">
+          {params.format === 'auto' && <><span className="console__k">{out.format.toUpperCase()}</span> · </>}
+          {out.width}×{out.height} · {bytes(out.compressedSize)}
+        </p>
+      )}
+
+      {/* The one condition that gets the alert colour, anywhere in the app. */}
+      {grew && params.format === 'png' && (
+        <div className="alert" role="alert">
+          <p className="alert__text"><T k="warn.inflated" /></p>
+          <button type="button" className="alert__act" onClick={() => set('format', 'webp')}>
+            <T k="warn.switchWebp" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

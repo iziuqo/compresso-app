@@ -5,13 +5,12 @@ import {
 /* ------------------------------------------------------------------ odometer */
 
 /**
- * Digits roll; everything else stays put. The trick is restraint: only the digits
- * that actually changed move, because only their transform changed. The rightmost
- * digit leads and each one to its left follows a beat later, which is how a
- * mechanical counter settles.
+ * Digits roll; everything else stays put. Only the digits that actually changed
+ * move, because only their transform changed — the rightmost leads and each one
+ * to its left follows a beat later, the way a mechanical counter settles.
  *
- * Tabular figures are non-negotiable here — without them the whole readout
- * reflows on every tick and the effect reads as a glitch instead of a mechanism.
+ * Tabular figures are non-negotiable: without them the readout reflows on every
+ * tick and the effect reads as a glitch rather than a mechanism.
  */
 export function Odometer({ value, className = '' }: { value: string; className?: string }) {
   const chars = [...value];
@@ -41,28 +40,37 @@ export function Odometer({ value, className = '' }: { value: string; className?:
 
 /* -------------------------------------------------------------------- slider */
 
+/**
+ * The signature control.
+ *
+ * A hairline that runs the full width, a knob big enough to look reachable, and
+ * the value floating directly above it — which means your eye never leaves the
+ * thing you're dragging. A tick marks the default so you can feel your way back
+ * to it without the control snapping and making the decision for you.
+ *
+ * Grabbing it dims the track, grows the knob, and lifts the value. Nothing
+ * bounces; it all settles.
+ */
 export function Slider({
-  label, value, min, max, step, display, onChange,
+  label, value, min, max, step, display, detent, onChange,
 }: {
   label: string; value: number; min: number; max: number; step: number;
-  display: string; onChange: (v: number) => void;
+  display: string; detent?: number; onChange: (v: number) => void;
 }) {
   const [live, setLive] = useState(false);
   const id = useId();
   const pct = ((value - min) / (max - min)) * 100;
+  const detentPct = detent != null ? ((detent - min) / (max - min)) * 100 : null;
 
   return (
     <div className={`sl ${live ? 'is-live' : ''}`} style={{ ['--p' as string]: `${pct}%` }}>
-      <div className="row__head">
-        <label className="row__label" htmlFor={id}>{label}</label>
-        <span className="row__value mono">{display}</span>
-      </div>
+      <span className="sl__value mono" aria-hidden="true">{display}</span>
       <div className="sl__lane">
-        {/* the value lifts out of the thumb while you drag, then settles back */}
-        <span className="sl__bubble mono" aria-hidden="true">{display}</span>
         <span className="sl__track" />
-        <span className="sl__fill" />
-        <span className="sl__thumb" />
+        {detentPct != null && (
+          <span className="sl__detent" style={{ left: `${detentPct}%` }} aria-hidden="true" />
+        )}
+        <span className="sl__knob" />
         <input
           id={id}
           className="sl__input"
@@ -71,42 +79,38 @@ export function Slider({
           onChange={(e) => onChange(Number(e.target.value))}
           onPointerDown={() => setLive(true)}
           onPointerUp={() => setLive(false)}
+          onPointerCancel={() => setLive(false)}
           onFocus={() => setLive(true)}
           onBlur={() => setLive(false)}
           aria-label={label}
+          aria-valuetext={display}
         />
       </div>
+      <span className="sl__name label">{label}</span>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- segmented */
+/* ------------------------------------------------------------------- tabs */
 
 export type Option<T extends string> = { value: T; label: string };
 
 /**
- * The selection is an ink block that travels. The labels are drawn twice: once in
- * ink, once in paper — and the paper layer is clipped to exactly the block. As the
- * block slides, each label wipes from ink to paper in place, which is a very
- * different feeling from a label that simply changes colour when the animation
- * ends. Nothing scales, nothing fades.
+ * A row of plain labels with one white pill riding beneath the active one. The
+ * pill travels rather than reappearing, and the label it lands on inverts in
+ * place — the paper-coloured copy is clipped to exactly the pill, so the wipe
+ * happens *during* the move instead of snapping at the end of it.
  */
-export function Segmented<T extends string>({
+export function Tabs<T extends string>({
   options, value, onChange, label,
 }: { options: Option<T>[]; value: T; onChange: (v: T) => void; label: string }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ left: 0, width: 0, host: 0 });
 
-  /**
-   * Measured against the segment's own box rather than via offsetLeft — the
-   * label layers are positioned, so offsetParent isn't the segment and the
-   * numbers come back in the wrong coordinate space, shaving letters off the
-   * ends of the clip.
-   */
   const measure = useCallback(() => {
     const el = wrap.current;
     if (!el) return;
-    const active = el.querySelector<HTMLElement>('.seg__hit[data-active="true"]');
+    const active = el.querySelector<HTMLElement>('.tabs__hit[data-active="true"]');
     if (!active) return;
     const host = el.getBoundingClientRect();
     const hit = active.getBoundingClientRect();
@@ -121,26 +125,21 @@ export function Segmented<T extends string>({
   }, [measure]);
 
   const clip = `inset(0 ${Math.max(0, box.host - (box.left + box.width))}px 0 ${box.left}px)`;
-
   const labels = () =>
-    options.map((o) => (
-      <span className="seg__label" key={o.value} data-active={o.value === value}>
-        {o.label}
-      </span>
-    ));
+    options.map((o) => <span className="tabs__label" key={o.value}>{o.label}</span>);
 
   return (
-    <div className="seg" ref={wrap} role="radiogroup" aria-label={label}>
+    <div className="tabs" ref={wrap} role="radiogroup" aria-label={label}>
       <span
-        className="seg__ink"
+        className="tabs__pill"
         style={{ transform: `translateX(${box.left}px)`, width: box.width }}
         aria-hidden="true"
       />
-      <span className="seg__layer" aria-hidden="true">{labels()}</span>
-      <span className="seg__layer seg__layer--inv" style={{ clipPath: clip }} aria-hidden="true">
+      <span className="tabs__layer" aria-hidden="true">{labels()}</span>
+      <span className="tabs__layer tabs__layer--inv" style={{ clipPath: clip }} aria-hidden="true">
         {labels()}
       </span>
-      <span className="seg__hits">
+      <span className="tabs__hits">
         {options.map((o) => (
           <button
             key={o.value}
@@ -148,7 +147,7 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={o.value === value}
             data-active={o.value === value}
-            className="seg__hit"
+            className="tabs__hit"
             onClick={() => onChange(o.value)}
           >
             <span className="sr">{o.label}</span>
@@ -170,7 +169,7 @@ export function NumberField({
   const id = useId();
   return (
     <div className="nf">
-      <label className="nf__label" htmlFor={id}>{label}</label>
+      <label className="nf__label label" htmlFor={id}>{label}</label>
       <span className="nf__box">
         <input
           id={id}
@@ -189,19 +188,17 @@ export function NumberField({
   );
 }
 
-/* -------------------------------------------------------------------- misc */
-
 export function Group({ label, children }: { label?: string; children: ReactNode }) {
   return (
     <section className="group">
-      {label && <h2 className="group__label">{label}</h2>}
-      <div className="group__body">{children}</div>
+      {label && <h2 className="group__label label">{label}</h2>}
+      {children}
     </section>
   );
 }
 
-/** Pointer-follow warm light. Lerped, so it trails the cursor instead of tracking
- *  it — the lag is what makes it feel like a lamp rather than a cursor effect. */
+/** A warm light that trails the pointer. The lag is the point — it reads as a
+ *  lamp over a bench rather than a cursor effect stapled to the mouse. */
 export function useTrailingLight<T extends HTMLElement>(active: boolean) {
   const ref = useRef<T>(null);
   const target = useRef({ x: 50, y: 50 });

@@ -9,13 +9,14 @@ const glyph = (paper, ink, signal, inset = 0) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${paper}"/>
   <g transform="translate(256 256) scale(${1 - inset}) translate(-256 -256)">
-    <rect x="96"  y="112" width="320" height="46" rx="3" fill="${ink}"/>
-    <rect x="96"  y="354" width="320" height="46" rx="3" fill="${ink}"/>
-    <rect x="156" y="224" width="200" height="64" rx="3" fill="${signal}"/>
+    <rect x="96"  y="112" width="320" height="46" rx="23" fill="${ink}"/>
+    <rect x="96"  y="354" width="320" height="46" rx="23" fill="${ink}"/>
+    <rect x="156" y="226" width="200" height="60" rx="30" fill="${signal}"/>
   </g>
 </svg>`;
 
-const PAPER = '#F6F2EA', INK = '#171412', SIGNAL = '#B8442A';
+// black plate, white press. no colour — same rule as the interface.
+const PAPER = '#000000', INK = '#FFFFFF', SIGNAL = '#FFFFFF';
 
 await mkdir('public/icons', { recursive: true });
 const any = Buffer.from(glyph(PAPER, INK, SIGNAL));

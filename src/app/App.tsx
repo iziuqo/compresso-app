@@ -4,7 +4,7 @@ import { T, useI18n } from '../i18n';
 import { useQueue, isImage, type Job } from '../state/queue';
 import { Grain, LangMenu, StatusBar, UpdateBar, Wordmark, useInstall, InstallChip } from '../ui/Chrome';
 import { Empty } from '../ui/Empty';
-import { Rail } from '../ui/Rail';
+import { Console } from '../ui/Console';
 import { Compare, Result, Tile } from '../ui/Workspace';
 
 const extFor = (format: string) => (format === 'jpeg' ? 'jpg' : format);
@@ -188,57 +188,70 @@ export default function App() {
         {!hasJobs ? (
           <Empty onFiles={(f) => { tap(); void q.add(f); }} dragging={dragging} />
         ) : (
+          /* One column, picture first. No inspector rail — a rail turns the
+             photograph into a thumbnail beside a form. */
           <div className="bench">
-            <Rail
-              params={q.params}
-              setParams={q.setParams}
-              caps={q.caps}
-              selected={q.selected}
-              onSave={saveOne}
-              onSaveAll={saveAll}
-              onShare={share}
-              onClear={q.clear}
-              canShare={canShare}
-              total={q.jobs.length}
-            />
-
-            <section className="stage">
-              <div className="stage__view">
-                {q.selected && <Compare job={q.selected} />}
-              </div>
-
-              {q.totals.done > 0 && (
-                <Result
-                  saved={q.totals.saved}
-                  fraction={q.totals.fraction}
-                  from={q.totals.original}
-                  to={q.totals.output}
-                  settled={q.totals.settled}
-                />
-              )}
-
-              <div className="strip" role="list">
-                {q.jobs.map((job, i) => (
-                  <div className="strip__cell" role="listitem" key={job.id} style={{ ['--i' as string]: Math.min(i, 8) }}>
-                    <Tile
-                      job={job}
-                      selected={job.id === q.selectedId}
-                      onSelect={() => q.setSelectedId(job.id)}
-                      onRemove={() => q.remove(job.id)}
-                      onRetry={() => q.retry(job.id)}
-                    />
-                  </div>
-                ))}
-                <label className="strip__add">
-                  <span aria-hidden="true">+</span>
-                  <span className="strip__add-label"><T k="action.add" /></span>
-                  <input
-                    type="file" multiple accept="image/*,.heic,.heif" className="sr"
-                    onChange={(e) => { void q.add([...(e.target.files ?? [])]); e.target.value = ''; }}
-                  />
-                </label>
-              </div>
+            <section className="viewer">
+              {/* keyed by job, so moving between images fades rather than cuts */}
+              {q.selected && <Compare key={q.selected.id} job={q.selected} />}
             </section>
+
+            {q.totals.done > 0 && (
+              <Result
+                saved={q.totals.saved}
+                fraction={q.totals.fraction}
+                from={q.totals.original}
+                to={q.totals.output}
+                settled={q.totals.settled}
+              />
+            )}
+
+            <Console params={q.params} setParams={q.setParams} caps={q.caps} selected={q.selected} />
+
+            <div className="strip" role="list">
+              {q.jobs.map((job, i) => (
+                <div className="strip__cell" role="listitem" key={job.id} style={{ ['--i' as string]: Math.min(i, 8) }}>
+                  <Tile
+                    job={job}
+                    selected={job.id === q.selectedId}
+                    onSelect={() => q.setSelectedId(job.id)}
+                    onRemove={() => q.remove(job.id)}
+                    onRetry={() => q.retry(job.id)}
+                  />
+                </div>
+              ))}
+              <label className="strip__add">
+                <span className="strip__add-glyph" aria-hidden="true">+</span>
+                <span className="sr">{t('action.add')}</span>
+                <input
+                  type="file" multiple accept="image/*,.heic,.heif" className="sr"
+                  onChange={(e) => { void q.add([...(e.target.files ?? [])]); e.target.value = ''; }}
+                />
+              </label>
+            </div>
+
+            {/* ✕ · the one white pill · share — the whole action surface */}
+            <div className="dock">
+              <button type="button" className="dock__icon" onClick={q.clear} aria-label={t('action.clear')}>
+                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.3" fill="none" />
+                </svg>
+              </button>
+
+              <button type="button" className="pill" onClick={q.jobs.length > 1 ? saveAll : saveOne}>
+                <T k={q.jobs.length > 1 ? 'action.saveZip' : 'action.save'} />
+              </button>
+
+              <button
+                type="button" className="dock__icon"
+                onClick={share} disabled={!canShare} aria-label={t('action.share')}
+              >
+                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.3">
+                  <path d="M8 10.5V1.8M8 1.8L4.9 4.9M8 1.8l3.1 3.1" strokeLinecap="round" />
+                  <path d="M2.5 9.5v3.7a1 1 0 001 1h9a1 1 0 001-1V9.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
       </main>

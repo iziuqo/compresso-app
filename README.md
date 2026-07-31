@@ -67,12 +67,33 @@ and looks native.
 
 ## Design
 
-"The Press" — Compresso → espresso → pressing. Paper, ink, pressure, impression.
-Letterpress deboss instead of drop shadows, hairlines instead of boxes, one accent
-used at most twice per screen, and a grain layer over everything.
+**The photograph is the only colour on screen.** Everything else is black, white, or
+a step between — the interface has no opinion about your image, so it doesn't put a
+hue next to one. The alert red appears on exactly one condition (output grew) and
+nowhere else in the app.
 
-Motion has four easing curves and none of them can overshoot: every control point
-sits at y ≤ 1, so bounce is not representable in the system. There are no springs.
+The vocabulary comes from darkroom apps, VSCO most directly: a true black ground,
+a full-bleed hairline slider with a knob big enough to look reachable and the value
+floating directly above it, 10px uppercase labels tracked wide, and a single white
+pill reserved for the one action you came to take. Structure is carried by space,
+not by cards. Light mode is a real inversion — paper white, ink black — rather than
+a tinted variant.
+
+Four easing curves, and none of them can overshoot: every control point sits at
+y ≤ 1, so bounce is not representable in the system. There are no springs.
+
+Details worth finding:
+
+- Thumbnails **develop** — the blur resolving as progress climbs *is* the progress
+  indicator. There's no bar behind it.
+- The savings figure rolls like a counter, and only the digits that changed move.
+- Each tile settles **2px upward** when its result lands. It's lighter now.
+- The comparison seam has no snap. It *decelerates* into the midpoint, so the centre
+  has a little weight without taking the decision from you.
+- The format pill travels, and each label inverts *in place* as it passes over —
+  the white copy is clipped to exactly the pill.
+- Grabbing the slider dims the track, grows the knob, and lifts the value.
+- Switching language doesn't swap text; it drifts out and settles back.
 
 ## Develop
 
