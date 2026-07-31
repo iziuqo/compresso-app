@@ -33,6 +33,7 @@ function probeCaps(): Caps {
 async function previewUrlFor(file: File): Promise<string> {
   const url = URL.createObjectURL(file);
   if (!isHeicSource(file)) return url;
+
   const ok = await new Promise<boolean>((resolve) => {
     const img = new Image();
     img.onload = () => resolve(true);
@@ -40,8 +41,18 @@ async function previewUrlFor(file: File): Promise<string> {
     img.src = url;
   });
   if (ok) return url;
-  URL.revokeObjectURL(url);
-  return URL.createObjectURL(await decodeHeic(file));
+
+  // This browser can't paint HEIC, so the preview has to be decoded. If that
+  // fails we hand back the original URL rather than nothing: the compression
+  // itself may still succeed, and a tile with no image at all reads as broken
+  // when it isn't.
+  try {
+    const decoded = URL.createObjectURL(await decodeHeic(file));
+    URL.revokeObjectURL(url);
+    return decoded;
+  } catch {
+    return url;
+  }
 }
 
 export function useQueue() {
@@ -131,7 +142,7 @@ export function useQueue() {
     for (const job of fresh) {
       previewUrlFor(job.file)
         .then((url) => patch(job.id, { previewUrl: url }))
-        .catch(() => {});
+        .catch(() => patch(job.id, { previewUrl: URL.createObjectURL(job.file) }));
       void runJob(job, token);
     }
   }, [patch, runJob]);

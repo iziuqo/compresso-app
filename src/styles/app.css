@@ -893,6 +893,10 @@ img { max-width: 100%; display: block; }
   .sheet__edge { opacity: 0.6; }
   .sheet__light { display: none; }
   .odo__reel { transition: none; }
-  .tile__img { filter: none; opacity: 1; transform: none; }
+  /* The blur IS the progress indicator, so removing it entirely would leave a
+     reduced-motion user with no sense of progress at all. Motion goes; the
+     opacity ramp stays, because a fade is not motion. */
+  .tile__img { filter: none; transform: none; }
+  .tile__grain { transition-duration: var(--dur-micro) !important; }
   .result__rule { width: 128px; }
 }
