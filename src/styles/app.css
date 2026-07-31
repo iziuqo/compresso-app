@@ -75,10 +75,13 @@ img { max-width: 100%; display: block; }
 .head__left, .head__right { display: flex; align-items: center; gap: var(--s-4); }
 
 .mark { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); }
-.mark__glyph { width: 15px; height: 15px; }
-/* the slug between the plates settles once, on load, and is never seen again */
-.mark__slug { animation: slug var(--dur-ceremony) var(--ease-entrance) both; transform-origin: center; }
-@keyframes slug { from { transform: scaleY(2.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.mark__glyph { width: 16px; height: 16px; }
+/* the disc arrives round and is pressed flat. the plates never move. */
+.mark__dot {
+  transform-origin: center;
+  animation: squash var(--dur-ceremony) var(--ease-entrance) both;
+}
+@keyframes squash { from { transform: scaleY(2.18); opacity: 0; } to { transform: none; opacity: 1; } }
 .mark__word {
   font-size: var(--t-small); font-weight: 500; letter-spacing: -0.005em;
 }

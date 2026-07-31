@@ -1,9 +1,8 @@
-
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#000000"/>
   <g transform="translate(256 256) scale(1) translate(-256 -256)">
-    <rect x="96"  y="112" width="320" height="46" rx="23" fill="#FFFFFF"/>
-    <rect x="96"  y="354" width="320" height="46" rx="23" fill="#FFFFFF"/>
-    <rect x="156" y="226" width="200" height="60" rx="30" fill="#FFFFFF"/>
+    <rect x="112" y="146" width="288" height="9" rx="4.5" fill="#FFFFFF"/>
+    <ellipse cx="256" cy="256" rx="120" ry="55" fill="#FFFFFF"/>
+    <rect x="112" y="357" width="288" height="9" rx="4.5" fill="#FFFFFF"/>
   </g>
 </svg>

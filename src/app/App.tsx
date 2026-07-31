@@ -90,7 +90,8 @@ export default function App() {
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
     let reg: ServiceWorkerRegistration | undefined;
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((r) => {
+    const base = import.meta.env.BASE_URL;
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).then((r) => {
       reg = r;
       // Never auto-activate: a batch in flight must not be killed by an update.
       r.addEventListener('updatefound', () => {
