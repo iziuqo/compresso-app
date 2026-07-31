@@ -8,6 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa';
  * prefix. `base` is what makes that true everywhere at once.
  */
 const BASE = '/compresso/';
+const SCOPE = '/compresso';
 
 export default defineConfig({
   base: BASE,
@@ -24,9 +25,12 @@ export default defineConfig({
         short_name: 'Compresso',
         description:
           'Compress, resize and convert images. Runs entirely on your device — nothing is uploaded. Works offline.',
-        start_url: BASE,
-        scope: BASE,
-        id: BASE,
+        // No trailing slash: that is the URL people are given, and a scope of
+        // '/compresso/' would not cover it — scope matching is a plain string
+        // prefix, so '/compresso' is outside '/compresso/'.
+        start_url: SCOPE,
+        scope: SCOPE,
+        id: SCOPE,
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#000000',

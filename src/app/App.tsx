@@ -91,7 +91,12 @@ export default function App() {
     if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
     let reg: ServiceWorkerRegistration | undefined;
     const base = import.meta.env.BASE_URL;
-    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).then((r) => {
+    // Scope drops the trailing slash so the worker also controls the bare
+    // /compresso URL — prefix matching would otherwise leave it uncontrolled,
+    // and that is the address people actually type. Requires the sw.js response
+    // to carry `Service-Worker-Allowed: /compresso`.
+    const scope = base === '/' ? '/' : base.replace(/\/$/, '');
+    navigator.serviceWorker.register(`${base}sw.js`, { scope }).then((r) => {
       reg = r;
       // Never auto-activate: a batch in flight must not be killed by an update.
       r.addEventListener('updatefound', () => {
