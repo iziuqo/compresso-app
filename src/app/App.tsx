@@ -6,6 +6,7 @@ import { Grain, LangMenu, StatusBar, UpdateBar, Wordmark, useInstall, InstallChi
 import { Empty } from '../ui/Empty';
 import { Console } from '../ui/Console';
 import { Compare, Result, Tile } from '../ui/Workspace';
+import { Check, Close, Plus, Share } from '../ui/icons';
 
 const extFor = (format: string) => (format === 'jpeg' ? 'jpg' : format);
 const baseName = (name: string) => name.replace(/\.[^.]+$/, '');
@@ -28,13 +29,18 @@ const tap = (ms = 8) => { try { navigator.vibrate?.(ms); } catch { /* unsupporte
 
 export default function App() {
   const q = useQueue();
-  const { t, bytes } = useI18n();
+  const { t } = useI18n();
   const [dragging, setDragging] = useState(false);
   const [offline, setOffline] = useState(() => !navigator.onLine);
   const [updateReady, setUpdateReady] = useState(false);
-  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  // idle → packing (zip work, which can take seconds) → done (briefly) → idle.
+  // The pill carries all three, so feedback lives on the control you pressed.
+  const [saveState, setSaveState] = useState<'idle' | 'packing' | 'done'>('idle');
+  const [settleRun, setSettleRun] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
   const install = useInstall();
   const dragDepth = useRef(0);
+  const lastOver = useRef(0);
 
   /* -- global input: drop anywhere, paste anywhere ----------------------- */
   useEffect(() => {
@@ -42,6 +48,7 @@ export default function App() {
       if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       dragDepth.current++;
+      lastOver.current = performance.now();
       setDragging(true);
     };
     const leave = (e: DragEvent) => {
@@ -49,7 +56,8 @@ export default function App() {
       dragDepth.current = Math.max(0, dragDepth.current - 1);
       if (dragDepth.current === 0) setDragging(false);
     };
-    const move = (e: DragEvent) => e.preventDefault();
+    const move = (e: DragEvent) => { e.preventDefault(); lastOver.current = performance.now(); };
+    const end = () => { dragDepth.current = 0; setDragging(false); };
     const drop = (e: DragEvent) => {
       e.preventDefault();
       dragDepth.current = 0;
@@ -64,16 +72,32 @@ export default function App() {
         .filter((f): f is File => !!f);
       if (files.length) { e.preventDefault(); void q.add(files); }
     };
+    /**
+     * Drag state is not reliably closed by the browser: release the file outside
+     * the window, or drag back out of it, and neither `drop` nor a final
+     * `dragleave` necessarily arrives — leaving the veil up with no way to
+     * dismiss it. `dragover` fires continuously while a drag is live, so a gap
+     * in it is the only trustworthy signal that the drag is over.
+     */
+    const sweep = window.setInterval(() => {
+      if (dragDepth.current > 0 && performance.now() - lastOver.current > 400) end();
+    }, 200);
+
     window.addEventListener('dragenter', over);
     window.addEventListener('dragover', move);
     window.addEventListener('dragleave', leave);
     window.addEventListener('drop', drop);
+    window.addEventListener('dragend', end);
+    window.addEventListener('blur', end);
     window.addEventListener('paste', paste);
     return () => {
+      window.clearInterval(sweep);
       window.removeEventListener('dragenter', over);
       window.removeEventListener('dragover', move);
       window.removeEventListener('dragleave', leave);
       window.removeEventListener('drop', drop);
+      window.removeEventListener('dragend', end);
+      window.removeEventListener('blur', end);
       window.removeEventListener('paste', paste);
     };
   }, [q]);
@@ -115,33 +139,45 @@ export default function App() {
     });
   }, []);
 
-  /* -- ceremony: announce the total once the queue settles ---------------- */
+  /* -- the batch landing: the highest-emotion moment in the product ---------
+     When the last job settles, every figure in the strip resolves in sequence
+     and the total lands behind it. It runs once per batch, not per file. */
   const settledOnce = useRef(false);
   useEffect(() => {
     if (q.totals.settled && q.totals.done > 0 && !settledOnce.current) {
       settledOnce.current = true;
+      setSettleRun((n) => n + 1);
       tap(12);
     }
     if (!q.totals.settled) settledOnce.current = false;
   }, [q.totals.settled, q.totals.done]);
 
   /* -- output ------------------------------------------------------------ */
-  const flashSaved = useCallback((amount: number) => {
-    setSavedFlash(t('action.saved', { amount: bytes(Math.abs(amount)) }));
-    window.setTimeout(() => setSavedFlash(null), 900);
-  }, [t, bytes]);
+  const confirm = useCallback(() => {
+    setSaveState('done');
+    window.setTimeout(() => setSaveState('idle'), 1400);
+  }, []);
 
   const saveOne = useCallback(() => {
     const job = q.selected;
     if (!job?.out) return;
     saveBlob(job.out.blob, outName(job));
-    flashSaved(job.out.originalSize - job.out.compressedSize);
-  }, [q.selected, flashSaved]);
+    confirm();
+  }, [q.selected, confirm]);
 
   const saveAll = useCallback(async () => {
     const ready = q.jobs.filter((j) => j.out);
     if (!ready.length) return;
-    if (ready.length === 1) { saveBlob(ready[0].out!.blob, outName(ready[0])); flashSaved(q.totals.saved); return; }
+    if (ready.length === 1) { saveBlob(ready[0].out!.blob, outName(ready[0])); confirm(); return; }
+
+    // Zipping a large batch is seconds of work, so the pill says so while it
+    // happens rather than going quiet and then claiming success.
+    setSaveState('packing');
+    // A macrotask, not a frame: requestAnimationFrame never fires in a
+    // backgrounded tab, so switching away mid-zip would strand the button in
+    // its working state forever. This only exists to let the state paint before
+    // the synchronous zip blocks the thread.
+    await new Promise((r) => setTimeout(r, 0));
 
     const entries: Record<string, Uint8Array> = {};
     const seen = new Map<string, number>();
@@ -155,8 +191,8 @@ export default function App() {
     // level 0: the payload is already-compressed image data — deflating it again
     // costs seconds and saves nothing.
     saveBlob(new Blob([zipSync(entries, { level: 0 })], { type: 'application/zip' }), 'compresso.zip');
-    flashSaved(q.totals.saved);
-  }, [q.jobs, q.totals.saved, flashSaved]);
+    confirm();
+  }, [q.jobs, confirm]);
 
   const shareFiles = useMemo(() => {
     return q.jobs.filter((j) => j.out).map((j) => new File([j.out!.blob], outName(j), { type: j.out!.mimeType }));
@@ -214,9 +250,25 @@ export default function App() {
 
             <Console params={q.params} setParams={q.setParams} caps={q.caps} selected={q.selected} />
 
-            <div className="strip" role="list">
+            <div
+              className={`strip ${settleRun ? 'is-settling' : ''}`}
+              key={settleRun}
+              role="listbox"
+              aria-label={t('action.add')}
+              ref={stripRef}
+              onKeyDown={(e) => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                e.preventDefault();
+                const i = q.jobs.findIndex((j) => j.id === q.selectedId);
+                const next = q.jobs[i + (e.key === 'ArrowRight' ? 1 : -1)];
+                if (!next) return;
+                q.setSelectedId(next.id);
+                requestAnimationFrame(() =>
+                  stripRef.current?.querySelector<HTMLElement>('.tile.is-selected .tile__hit')?.focus());
+              }}
+            >
               {q.jobs.map((job, i) => (
-                <div className="strip__cell" role="listitem" key={job.id} style={{ ['--i' as string]: Math.min(i, 8) }}>
+                <div className="strip__cell" role="option" aria-selected={job.id === q.selectedId} key={job.id} style={{ ['--i' as string]: Math.min(i, 11) }}>
                   <Tile
                     job={job}
                     selected={job.id === q.selectedId}
@@ -227,7 +279,7 @@ export default function App() {
                 </div>
               ))}
               <label className="strip__add">
-                <span className="strip__add-glyph" aria-hidden="true">+</span>
+                <Plus size={16} />
                 <span className="sr">{t('action.add')}</span>
                 <input
                   type="file" multiple accept="image/*,.heic,.heif" className="sr"
@@ -239,23 +291,31 @@ export default function App() {
             {/* ✕ · the one white pill · share — the whole action surface */}
             <div className="dock">
               <button type="button" className="dock__icon" onClick={q.clear} aria-label={t('action.clear')}>
-                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.3" fill="none" />
-                </svg>
+                <Close />
               </button>
 
-              <button type="button" className="pill" onClick={q.jobs.length > 1 ? saveAll : saveOne}>
-                <T k={q.jobs.length > 1 ? 'action.saveZip' : 'action.save'} />
+              <button
+                type="button"
+                className={`pill pill--stateful is-${saveState}`}
+                onClick={q.jobs.length > 1 ? saveAll : saveOne}
+                disabled={saveState === 'packing'}
+              >
+                <span className="pill__face pill__face--idle">
+                  <T k={q.jobs.length > 1 ? 'action.saveZip' : 'action.save'} />
+                </span>
+                <span className="pill__face pill__face--packing" aria-hidden={saveState !== 'packing'}>
+                  <T k="action.packing" />
+                </span>
+                <span className="pill__face pill__face--done" aria-hidden={saveState !== 'done'}>
+                  <Check size={14} /><T k="action.done" />
+                </span>
               </button>
 
               <button
                 type="button" className="dock__icon"
                 onClick={share} disabled={!canShare} aria-label={t('action.share')}
               >
-                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.3">
-                  <path d="M8 10.5V1.8M8 1.8L4.9 4.9M8 1.8l3.1 3.1" strokeLinecap="round" />
-                  <path d="M2.5 9.5v3.7a1 1 0 001 1h9a1 1 0 001-1V9.5" strokeLinecap="round" />
-                </svg>
+                <Share />
               </button>
             </div>
           </div>
@@ -270,7 +330,11 @@ export default function App() {
         offline={offline}
       />
 
-      <div className={`flash ${savedFlash ? 'is-on' : ''}`} role="status">{savedFlash}</div>
+      {/* dropping onto a working session needs its own answer — the empty state's
+          edge hairline is not on screen any more */}
+      <div className={`dropveil ${dragging && hasJobs ? 'is-on' : ''}`} aria-hidden={!dragging}>
+        <span className="dropveil__label label"><T k="empty.drop" /></span>
+      </div>
     </div>
   );
 }

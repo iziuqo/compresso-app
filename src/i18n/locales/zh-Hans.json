@@ -56,5 +56,8 @@
   "install.ios": "点击「分享」，再选「添加到主屏幕」。",
   "install.dismiss": "暂不",
   "update.body": "新版本已就绪",
-  "update.action": "重新加载"
+  "update.action": "重新加载",
+  "action.packing": "打包中…",
+  "action.done": "完成",
+  "empty.drop": "松开即可添加"
 }

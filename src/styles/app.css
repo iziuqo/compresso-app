@@ -110,6 +110,28 @@ img { max-width: 100%; display: block; }
 .pill:active { transform: scale(0.972); opacity: 0.86; }
 .pill--lg { height: 44px; padding: 0 var(--s-7); font-size: var(--t-body); }
 
+/* Three faces stacked in one grid cell, so the pill keeps the width of its
+   longest label and nothing on the row moves as the state changes. German
+   ("Wird gepackt…") is what sets that width, which is the point of measuring
+   all three rather than sizing to the English. */
+.pill--stateful { display: inline-grid; }
+.pill--stateful[disabled] { opacity: 1; cursor: default; }
+.pill__face {
+  grid-area: 1 / 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  white-space: nowrap;
+  transition: opacity var(--dur-standard) var(--ease-standard),
+              transform var(--dur-standard) var(--ease-standard);
+}
+.pill__face--packing, .pill__face--done { opacity: 0; transform: translateY(4px); }
+.pill.is-packing .pill__face--idle,
+.pill.is-done    .pill__face--idle { opacity: 0; transform: translateY(-4px); }
+.pill.is-packing .pill__face--packing,
+.pill.is-done    .pill__face--done { opacity: 1; transform: none; }
+/* while it works, the fill breathes — the control is busy, not broken */
+.pill.is-packing { animation: working 1.4s var(--ease-glide) infinite; }
+@keyframes working { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
 /* ============================================================ empty state */
 
 .empty {
@@ -277,12 +299,16 @@ img { max-width: 100%; display: block; }
 /* the grip sits on photographic content, so it doesn't follow the theme:
    always white, always legible, whatever is behind it */
 .cmp__grip {
-  width: 20px; height: 20px; border-radius: var(--r-pill);
-  background: #fff;
+  display: grid; place-items: center;
+  width: 26px; height: 26px; border-radius: var(--r-pill);
+  background: #fff; color: #000;
   box-shadow: 0 0 0 3px rgb(0 0 0 / 0.12);
   transition: transform var(--dur-standard) var(--ease-standard),
               box-shadow var(--dur-standard) var(--ease-standard);
 }
+/* the glyph is an invitation; once you have accepted it, it withdraws */
+.cmp__grip svg { transition: opacity var(--dur-standard) var(--ease-standard); }
+.cmp.is-dragging .cmp__grip svg { opacity: 0; }
 .cmp__handle:hover .cmp__grip { transform: scale(1.12); }
 .cmp.is-dragging .cmp__grip { transform: scale(1.2); box-shadow: 0 0 0 5px rgb(0 0 0 / 0.16); }
 
@@ -382,7 +408,12 @@ img { max-width: 100%; display: block; }
 .sl__detent {
   position: absolute; width: var(--hair); height: 7px;
   background: var(--line-2); transform: translateX(-0.5px);
+  transition: height var(--dur-standard) var(--ease-standard),
+              background-color var(--dur-standard) var(--ease-standard);
 }
+/* landing on the default is worth feeling. the tick grows and brightens for a
+   beat — a visual detent, plus a 4ms tap on hardware that has one. */
+.sl.is-hit .sl__detent { height: 13px; background: var(--ink); }
 .sl__knob {
   position: absolute; left: var(--p);
   width: var(--knob); height: var(--knob); margin-left: calc(var(--knob) / -2);
@@ -489,6 +520,21 @@ img { max-width: 100%; display: block; }
   animation: rise var(--dur-entrance) var(--ease-entrance) both;
   animation-delay: calc(var(--i) * var(--stagger));
 }
+/* the batch landing: when the last job settles, every figure resolves in
+   sequence and the total lands behind them. once per batch, never per file. */
+.strip.is-settling .tile__figure {
+  animation: land 420ms var(--ease-entrance) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+@keyframes land {
+  from { opacity: 0.25; transform: translateY(4px); }
+  to   { opacity: 1;    transform: none; }
+}
+/* overflow should read as continuing, not as cut off */
+.strip {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--s-5), #000 calc(100% - var(--s-5)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--s-5), #000 calc(100% - var(--s-5)), transparent 100%);
+}
 
 .tile {
   position: relative; width: 78px;
@@ -501,6 +547,14 @@ img { max-width: 100%; display: block; }
 
 .tile__hit { display: grid; gap: 0.4rem; width: 100%; text-align: center; }
 .tile__hit:hover .tile__img { opacity: 1; }
+.tile__frame::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--ink);
+  opacity: 0;
+  transition: opacity var(--dur-standard) var(--ease-standard);
+}
+.tile__hit:hover .tile__frame::after { opacity: 0.28; }
+.tile.is-selected .tile__frame::after { opacity: 0; }
 .tile__frame {
   position: relative; display: block;
   aspect-ratio: 1; overflow: hidden;
@@ -559,7 +613,7 @@ img { max-width: 100%; display: block; }
               box-shadow var(--dur-standard) var(--ease-standard);
 }
 .strip__add:hover { color: var(--ink-2); box-shadow: inset 0 0 0 var(--hair) var(--line-2); }
-.strip__add-glyph { font-size: 1.1rem; font-weight: 300; line-height: 1; }
+
 
 /* ==================================================================== dock */
 
@@ -597,18 +651,23 @@ img { max-width: 100%; display: block; }
 
 /* ================================================================ ephemera */
 
-.flash {
-  position: fixed; left: 50%; bottom: 84px; z-index: 60;
-  transform: translate(-50%, 6px);
-  padding: 0.45rem var(--s-4);
-  border-radius: var(--r-pill);
-  background: var(--ink); color: var(--void);
-  font-size: var(--t-meta); font-weight: 500;
+.dropveil {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--void) 72%, transparent);
   opacity: 0; pointer-events: none;
-  transition: opacity var(--dur-standard) var(--ease-standard),
-              transform var(--dur-standard) var(--ease-standard);
+  transition: opacity var(--dur-standard) var(--ease-standard);
 }
-.flash.is-on { opacity: 1; transform: translate(-50%, 0); }
+.dropveil.is-on { opacity: 1; }
+.dropveil__label {
+  color: var(--ink);
+  padding: var(--s-3) var(--s-5);
+  box-shadow: inset 0 0 0 var(--hair) var(--line-2);
+  border-radius: var(--r-pill);
+  transform: translateY(4px);
+  transition: transform var(--dur-standard) var(--ease-standard);
+}
+.dropveil.is-on .dropveil__label { transform: none; }
 
 .update {
   display: flex; align-items: center; justify-content: center; gap: var(--s-3);
@@ -629,6 +688,7 @@ img { max-width: 100%; display: block; }
   .console__row--fields { gap: var(--s-2); }
   .tile, .strip__add { width: 64px; }
   .empty__formats { display: none; }
+  .strip { -webkit-mask-image: none; mask-image: none; }
 }
 
 /* ========================================================= reduced motion ==
@@ -644,6 +704,8 @@ img { max-width: 100%; display: block; }
   }
   .empty__light { display: none; }
   .odo__reel { transition: none; }
+  .strip.is-settling .tile__figure { animation: none; }
+  .pill.is-packing { animation: none; }
   /* the blur IS the progress indicator, so it can't just be removed — motion
      goes, the opacity ramp stays, because a fade is not motion */
   .tile__img { filter: none; transform: none; }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { T, useI18n } from '../i18n';
 import { Odometer } from './primitives';
+import { Drag } from './icons';
 import type { Job } from '../state/queue';
 
 /* -------------------------------------------------------------------- compare */
@@ -86,7 +87,8 @@ export function Compare({ job }: { job: Job }) {
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <span className="cmp__grip" aria-hidden="true" />
+        {/* the glyph says "pull me", then gets out of the way once you are */}
+        <span className="cmp__grip" aria-hidden="true"><Drag size={13} /></span>
       </button>
 
       <span className="cmp__tag cmp__tag--l label"><T k="view.before" /></span>
@@ -129,7 +131,10 @@ export function Tile({
       className={`tile tile--${job.status} ${selected ? 'is-selected' : ''} ${grew ? 'is-grew' : ''}`}
       style={{ ['--p' as string]: job.status === 'done' ? 1 : job.progress }}
     >
-      <button type="button" className="tile__hit" onClick={onSelect} aria-pressed={selected}>
+      <button
+        type="button" className="tile__hit" onClick={onSelect} aria-pressed={selected}
+        tabIndex={selected ? 0 : -1}
+      >
         <span className="tile__frame">
           {job.previewUrl && <img className="tile__img" src={job.previewUrl} alt="" draggable={false} />}
           {job.status === 'failed' && <span className="tile__strike" aria-hidden="true" />}

@@ -56,5 +56,8 @@
   "install.ios": "Touchez Partager, puis « Sur l’écran d’accueil ».",
   "install.dismiss": "Plus tard",
   "update.body": "Une nouvelle version est prête",
-  "update.action": "Recharger"
+  "update.action": "Recharger",
+  "action.packing": "Compression…",
+  "action.done": "Terminé",
+  "empty.drop": "Déposez pour ajouter"
 }

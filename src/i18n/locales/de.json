@@ -56,5 +56,8 @@
   "install.ios": "Auf Teilen tippen, dann „Zum Home-Bildschirm“.",
   "install.dismiss": "Später",
   "update.body": "Eine neue Version ist bereit",
-  "update.action": "Neu laden"
+  "update.action": "Neu laden",
+  "action.packing": "Wird gepackt…",
+  "action.done": "Fertig",
+  "empty.drop": "Zum Hinzufügen ablegen"
 }

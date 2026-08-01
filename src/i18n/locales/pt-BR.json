@@ -56,5 +56,8 @@
   "install.ios": "Toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
   "install.dismiss": "Agora não",
   "update.body": "Tem uma versão nova pronta",
-  "update.action": "Recarregar"
+  "update.action": "Recarregar",
+  "action.packing": "Compactando…",
+  "action.done": "Pronto",
+  "empty.drop": "Solte para adicionar"
 }

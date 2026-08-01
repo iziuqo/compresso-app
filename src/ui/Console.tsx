@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { T, useI18n } from '../i18n';
 import { NumberField, Slider, Tabs, type Option } from './primitives';
+import { Chevron } from './icons';
 import type { Caps, Format, Params } from '../engine/types';
 import type { Job } from '../state/queue';
 
@@ -76,9 +77,7 @@ export function Console({
           onClick={() => setOpen((v) => !v)}
         >
           <T k="rail.dimensions" />
-          <span className="fold__caret" aria-hidden="true">
-            <svg width="8" height="5" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.1" fill="none" strokeLinecap="round" /></svg>
-          </span>
+          <Chevron size={11} className="fold__caret" />
         </button>
       </div>
 

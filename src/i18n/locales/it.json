@@ -56,5 +56,8 @@
   "install.ios": "Tocca Condividi, poi «Aggiungi a Home».",
   "install.dismiss": "Non ora",
   "update.body": "È pronta una nuova versione",
-  "update.action": "Ricarica"
+  "update.action": "Ricarica",
+  "action.packing": "Compressione…",
+  "action.done": "Fatto",
+  "empty.drop": "Rilascia per aggiungere"
 }

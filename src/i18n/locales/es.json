@@ -56,5 +56,8 @@
   "install.ios": "Toca Compartir y luego «Añadir a inicio».",
   "install.dismiss": "Ahora no",
   "update.body": "Hay una versión nueva",
-  "update.action": "Recargar"
+  "update.action": "Recargar",
+  "action.packing": "Comprimiendo…",
+  "action.done": "Listo",
+  "empty.drop": "Suelta para añadir"
 }

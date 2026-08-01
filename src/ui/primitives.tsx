@@ -58,12 +58,31 @@ export function Slider({
   display: string; detent?: number; onChange: (v: number) => void;
 }) {
   const [live, setLive] = useState(false);
+  const [hit, setHit] = useState(false);
   const id = useId();
   const pct = ((value - min) / (max - min)) * 100;
   const detentPct = detent != null ? ((detent - min) / (max - min)) * 100 : null;
 
+  /**
+   * The tick answers when you land on it. Fired on the *crossing* — comparing
+   * against the previous value — because reacting to "near the detent" would
+   * buzz on every frame of a slow drag.
+   */
+  const prev = useRef(value);
+  useEffect(() => {
+    if (detent == null) { prev.current = value; return; }
+    const was = prev.current;
+    prev.current = value;
+    const crossed = (was - detent) * (value - detent) <= 0 && was !== value;
+    if (!crossed) return;
+    setHit(true);
+    try { navigator.vibrate?.(4); } catch { /* unsupported */ }
+    const t = window.setTimeout(() => setHit(false), 260);
+    return () => window.clearTimeout(t);
+  }, [value, detent]);
+
   return (
-    <div className={`sl ${live ? 'is-live' : ''}`} style={{ ['--p' as string]: `${pct}%` }}>
+    <div className={`sl ${live ? 'is-live' : ''} ${hit ? 'is-hit' : ''}`} style={{ ['--p' as string]: `${pct}%` }}>
       <span className="sl__value mono" aria-hidden="true">{display}</span>
       <div className="sl__lane">
         <span className="sl__track" />

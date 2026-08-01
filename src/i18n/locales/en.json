@@ -56,5 +56,8 @@
   "install.ios": "Tap Share, then “Add to Home Screen”.",
   "install.dismiss": "Not now",
   "update.body": "A new version is ready",
-  "update.action": "Reload"
+  "update.action": "Reload",
+  "action.packing": "Packing…",
+  "action.done": "Done",
+  "empty.drop": "Drop to add"
 }
