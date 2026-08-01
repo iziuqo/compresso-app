@@ -76,12 +76,14 @@ img { max-width: 100%; display: block; }
 
 .mark { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); }
 .mark__glyph { width: 16px; height: 16px; }
-/* the disc arrives round and is pressed flat. the plates never move. */
-.mark__dot {
-  transform-origin: center;
-  animation: squash var(--dur-ceremony) var(--ease-entrance) both;
+/* the plates close, once, on load */
+.mark__jaw { transform-origin: center; animation: close var(--dur-ceremony) var(--ease-entrance) both; }
+.mark__jaw--top { --from: -3px; }
+.mark__jaw--btm { --from: 3px; }
+@keyframes close {
+  from { transform: translateY(var(--from)); opacity: 0; }
+  to   { transform: none; opacity: 1; }
 }
-@keyframes squash { from { transform: scaleY(2.18); opacity: 0; } to { transform: none; opacity: 1; } }
 .mark__word {
   font-size: var(--t-small); font-weight: 500; letter-spacing: -0.005em;
 }
@@ -89,6 +91,7 @@ img { max-width: 100%; display: block; }
 .main { min-height: 0; overflow: hidden; }
 
 .ghost {
+  display: inline-flex; align-items: center;
   color: var(--ink-2);
   transition: color var(--dur-micro) var(--ease-standard);
 }
@@ -193,8 +196,13 @@ img { max-width: 100%; display: block; }
 
 /* ============================================================= lang menu */
 
-.lang { position: relative; }
-.lang__trigger { color: var(--ink-2); transition: color var(--dur-micro) var(--ease-standard); }
+/* inline-flex, not block: a block wrapper puts its inline-block child on a text
+   baseline, which pushed this 1.5px below the Install chip beside it */
+.lang { position: relative; display: inline-flex; align-items: center; }
+.lang__trigger {
+  display: inline-flex; align-items: center;
+  color: var(--ink-2); transition: color var(--dur-micro) var(--ease-standard);
+}
 .lang__trigger:hover, .lang__trigger[aria-expanded='true'] { color: var(--ink); }
 
 .lang__sheet {

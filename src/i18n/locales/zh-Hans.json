@@ -16,7 +16,7 @@
   "rail.autoNote": "此浏览器能写出的最佳格式",
   "rail.applyAll": "应用于全部",
   "rail.applyOne": "仅此图片",
-  "rail.unset": "—",
+  "rail.unset": "∞",
   "action.save": "保存",
   "action.saveAll": "全部保存",
   "action.saveZip": "打包为 .zip",
@@ -45,7 +45,7 @@
   "result.totalOne": "这张图片轻了 {amount}",
   "result.from": "{from} → {to}",
   "result.dims": "{w}×{h}",
-  "warn.inflated": "保持 PNG 会让文件变大。PNG 没有质量档位——转成 WebP 才能真正压缩。",
+  "warn.inflated": "保持 PNG 会让文件变大。PNG 没有质量档位，转成 WebP 才能真正压缩。",
   "warn.switchWebp": "转为 WebP",
   "error.decode": "无法把这个文件读作图片。",
   "error.generic": "这个文件出了点问题。",
@@ -59,5 +59,8 @@
   "update.action": "重新加载",
   "action.packing": "打包中…",
   "action.done": "完成",
-  "empty.drop": "松开即可添加"
+  "empty.drop": "松开即可添加",
+  "empty.ledeTouch": "选几张照片。压缩全部在这台设备上完成，不上传任何内容，没有信号也能用。",
+  "empty.ctaTouch": "选择照片",
+  "empty.hintTouch": "直接从相册里选"
 }

@@ -1,7 +1,7 @@
 {
   "app.tagline": "Niente esce dal tuo dispositivo",
   "empty.title": "Alleggerisci le immagini.",
-  "empty.lede": "Trascinale qui. Vengono compresse su questo dispositivo, da questo dispositivo: non si carica nulla e funziona anche senza connessione.",
+  "empty.lede": "Trascinale qui. Vengono compresse su questo dispositivo, da questo dispositivo. Non si carica nulla e funziona anche senza connessione.",
   "empty.cta": "Scegli le immagini",
   "empty.hint": "o trascinale ovunque · incolla con {key}",
   "empty.formats": "JPEG · PNG · WebP · AVIF · HEIC",
@@ -16,7 +16,7 @@
   "rail.autoNote": "Il formato migliore che questo browser sa scrivere",
   "rail.applyAll": "Applica a tutte",
   "rail.applyOne": "Solo questa",
-  "rail.unset": "—",
+  "rail.unset": "∞",
   "action.save": "Salva",
   "action.saveAll": "Salva tutto",
   "action.saveZip": "Salva tutto in .zip",
@@ -45,7 +45,7 @@
   "result.totalOne": "Questa immagine è più leggera di {amount}",
   "result.from": "da {from} a {to}",
   "result.dims": "{w}×{h}",
-  "warn.inflated": "Tenuto come PNG, questo file cresce. Il PNG non ha un controllo di qualità: convertilo in WebP per ridurlo davvero.",
+  "warn.inflated": "Tenuto come PNG, questo file cresce. Il PNG non ha un controllo di qualità, quindi convertilo in WebP per ridurlo davvero.",
   "warn.switchWebp": "Converti in WebP",
   "error.decode": "Non è stato possibile leggere questo file come immagine.",
   "error.generic": "Qualcosa è andato storto con questo file.",
@@ -59,5 +59,8 @@
   "update.action": "Ricarica",
   "action.packing": "Compressione…",
   "action.done": "Fatto",
-  "empty.drop": "Rilascia per aggiungere"
+  "empty.drop": "Rilascia per aggiungere",
+  "empty.ledeTouch": "Scegli qualche foto. Vengono compresse su questo dispositivo, da questo dispositivo. Non si carica nulla, anche senza segnale.",
+  "empty.ctaTouch": "Scegli le foto",
+  "empty.hintTouch": "Direttamente dal tuo rullino"
 }

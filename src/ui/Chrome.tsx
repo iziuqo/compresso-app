@@ -8,15 +8,14 @@ export function Grain() {
   return <div className="grain" aria-hidden="true" style={{ backgroundImage: GRAIN_URL }} />;
 }
 
-/** The app mark: a disc held between two plates. It arrives round and settles
- *  flat while the plates hold still — once, on load, and never again. */
+/** The app mark: two plates closing on each other. They come apart and shut
+ *  once, on load, and then never move again. */
 export function Wordmark() {
   return (
     <span className="mark">
       <svg className="mark__glyph" viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="1.8" y="4.9" width="20.4" height="1.5" rx="0.75" fill="currentColor" />
-        <ellipse className="mark__dot" cx="12" cy="12" rx="9.4" ry="4.3" fill="currentColor" />
-        <rect x="1.8" y="17.6" width="20.4" height="1.5" rx="0.75" fill="currentColor" />
+        <path className="mark__jaw mark__jaw--top" d="M3 3.6H21L16.5 10H7.5Z" fill="currentColor" />
+        <path className="mark__jaw mark__jaw--btm" d="M3 20.4H21L16.5 14H7.5Z" fill="currentColor" />
       </svg>
       <span className="mark__word">compresso</span>
     </span>

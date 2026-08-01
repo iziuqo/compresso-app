@@ -47,6 +47,18 @@ export function Console({
         <Tabs options={formats} value={params.format} onChange={(v) => set('format', v)} label={t('rail.format')} />
       </div>
 
+      <div className="console__row">
+        <button
+          type="button"
+          className="fold__toggle label"
+          aria-expanded={open || hasLimits}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <T k="rail.dimensions" />
+          <Chevron size={11} className="fold__caret" />
+        </button>
+      </div>
+
       {/* Size limits are the tool you reach for occasionally, so they stay folded
           away — one thing on screen at a time. The row expands rather than
           appearing, so nothing below it jumps. */}
@@ -67,18 +79,6 @@ export function Console({
             />
           </div>
         </div>
-      </div>
-
-      <div className="console__row">
-        <button
-          type="button"
-          className="fold__toggle label"
-          aria-expanded={open || hasLimits}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <T k="rail.dimensions" />
-          <Chevron size={11} className="fold__caret" />
-        </button>
       </div>
 
       {out && (

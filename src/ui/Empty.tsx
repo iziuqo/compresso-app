@@ -1,19 +1,32 @@
+import { useEffect, useState } from 'react';
 import { useI18n, T } from '../i18n';
 import { useTrailingLight } from './primitives';
 
 /**
- * Nothing loaded yet.
- *
- * No dashed rectangle, no cloud-with-an-arrow. The whole ground is the target,
- * so the screen says what the app does and gives you one thing to press. A soft
- * light trails the pointer across the void at a lag; drag a file anywhere and
- * the light comes up and a hairline draws itself around the edge of the screen.
+ * A phone has no cursor to drop with and no ⌘V to paste from, so the empty
+ * state doesn't describe gestures the device can't perform. `pointer: coarse`
+ * is the honest test — it asks about the input, not about the screen width, so
+ * a small window on a laptop still gets the desktop copy and a tablet doesn't.
  */
+function useCoarsePointer() {
+  const [coarse, setCoarse] = useState(
+    () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
+  );
+  useEffect(() => {
+    const mq = matchMedia('(pointer: coarse)');
+    const on = () => setCoarse(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return coarse;
+}
+
 export function Empty({
   onFiles, dragging,
 }: { onFiles: (files: File[]) => void; dragging: boolean }) {
   const { t } = useI18n();
   const stage = useTrailingLight<HTMLDivElement>(true);
+  const touch = useCoarsePointer();
   const isMac = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform);
 
   return (
@@ -23,10 +36,10 @@ export function Empty({
 
       <div className="empty__body">
         <h1 className="empty__title"><T k="empty.title" /></h1>
-        <p className="empty__lede"><T k="empty.lede" /></p>
+        <p className="empty__lede"><T k={touch ? 'empty.ledeTouch' : 'empty.lede'} /></p>
 
         <label className="pill pill--lg">
-          <T k="empty.cta" />
+          <T k={touch ? 'empty.ctaTouch' : 'empty.cta'} />
           <input
             type="file" multiple accept="image/*,.heic,.heif" className="sr"
             onChange={(e) => { onFiles([...(e.target.files ?? [])]); e.target.value = ''; }}
@@ -34,7 +47,9 @@ export function Empty({
         </label>
 
         <p className="empty__hint label">
-          <T k="empty.hint" vars={{ key: isMac ? '⌘V' : 'Ctrl+V' }} />
+          {touch
+            ? <T k="empty.hintTouch" />
+            : <T k="empty.hint" vars={{ key: isMac ? '⌘V' : 'Ctrl+V' }} />}
         </p>
       </div>
 

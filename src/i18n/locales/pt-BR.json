@@ -1,7 +1,7 @@
 {
   "app.tagline": "Nada sai do seu aparelho",
   "empty.title": "Deixe suas imagens mais leves.",
-  "empty.lede": "Solte aqui. A compressão acontece neste aparelho, por este aparelho — nada é enviado, e funciona até sem conexão nenhuma.",
+  "empty.lede": "Solte aqui. A compressão acontece neste aparelho, por este aparelho. Nada é enviado, e funciona até sem conexão nenhuma.",
   "empty.cta": "Escolher imagens",
   "empty.hint": "ou solte em qualquer lugar · cole com {key}",
   "empty.formats": "JPEG · PNG · WebP · AVIF · HEIC",
@@ -16,7 +16,7 @@
   "rail.autoNote": "O melhor formato que este navegador sabe gravar",
   "rail.applyAll": "Aplicar a todas",
   "rail.applyOne": "Só esta imagem",
-  "rail.unset": "—",
+  "rail.unset": "∞",
   "action.save": "Salvar",
   "action.saveAll": "Salvar tudo",
   "action.saveZip": "Salvar tudo em .zip",
@@ -45,7 +45,7 @@
   "result.totalOne": "Esta imagem ficou {amount} mais leve",
   "result.from": "de {from} para {to}",
   "result.dims": "{w}×{h}",
-  "warn.inflated": "Mantido como PNG, este arquivo cresce. PNG não tem controle de qualidade — converta para WebP para encolher de verdade.",
+  "warn.inflated": "Mantido como PNG, este arquivo cresce. PNG não tem controle de qualidade, então converta para WebP para encolher de verdade.",
   "warn.switchWebp": "Converter para WebP",
   "error.decode": "Não deu para ler este arquivo como imagem.",
   "error.generic": "Algo deu errado com este arquivo.",
@@ -59,5 +59,8 @@
   "update.action": "Recarregar",
   "action.packing": "Compactando…",
   "action.done": "Pronto",
-  "empty.drop": "Solte para adicionar"
+  "empty.drop": "Solte para adicionar",
+  "empty.ledeTouch": "Escolha algumas fotos. A compressão acontece neste aparelho, por este aparelho. Nada é enviado, mesmo sem sinal.",
+  "empty.ctaTouch": "Escolher fotos",
+  "empty.hintTouch": "Direto do seu rolo da câmera"
 }

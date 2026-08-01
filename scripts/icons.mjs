@@ -2,21 +2,23 @@ import sharp from 'sharp';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 /**
- * The mark: a circle held between two plates, and flattened.
+ * The mark: two plates closing on each other.
  *
- * Three white shapes on black — no gradient, no container, nothing to explain.
- * Checked at 16px before it was chosen: the plate rules survive there, which is
- * what makes it read as *compressed* rather than as a generic ellipse. The same
- * glyph runs in the header, where the disc arrives round and settles flat while
- * the plates hold still.
+ * Every edge is straight and every corner is hard, which is what the previous
+ * ellipse was not. Two solid trapezoids, tips facing, with a gap between them:
+ * it reads as pressure at 512px and it still reads as pressure at 16px, where
+ * the wide flat bases are the last thing to survive. Rendered against opposed
+ * triangles, a rectangle-between-rules, and a descending bar stack before it
+ * was chosen.
+ *
+ * The same glyph runs in the header, where the two plates close once on load.
  */
 const glyph = (ground, ink, k = 1) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${ground}"/>
   <g transform="translate(256 256) scale(${k}) translate(-256 -256)">
-    <rect x="112" y="146" width="288" height="9" rx="4.5" fill="${ink}"/>
-    <ellipse cx="256" cy="256" rx="120" ry="55" fill="${ink}"/>
-    <rect x="112" y="357" width="288" height="9" rx="4.5" fill="${ink}"/>
+    <path d="M104 128 H408 L332 236 H180 Z" fill="${ink}"/>
+    <path d="M104 384 H408 L332 276 H180 Z" fill="${ink}"/>
   </g>
 </svg>`;
 
