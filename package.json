@@ -10,7 +10,7 @@
     "icons": "node scripts/icons.mjs"
   },
   "dependencies": {
-    "compresso.js": "file:compresso.js-1.0.0-rc.1.tgz",
+    "compresso.js": "^1.0.0-rc.1",
     "fflate": "^0.8.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
