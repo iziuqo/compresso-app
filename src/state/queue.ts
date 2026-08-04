@@ -1,8 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pool, PreviewWorker } from '../engine/pool';
-import type { Caps, CompressOutput, Params } from '../engine/types';
-import { DEFAULT_PARAMS } from '../engine/types';
-import { isFormatSupported, isHeicSource, decodeHeic } from '../engine/core/index.js';
+import { isFormatSupported, isHeicSource, decodeHeic, type CompressResult } from 'compresso.js';
+import { createPool, defaultPoolSize, type Pool } from 'compresso.js/pool';
+
+export type Format = 'auto' | 'webp' | 'avif' | 'jpeg' | 'png';
+
+export type Params = {
+  quality: number;
+  format: Format;
+  maxWidth: number | null;
+  maxHeight: number | null;
+  maxSizeMB: number | null;
+};
+
+export const DEFAULT_PARAMS: Params = {
+  quality: 0.8,
+  format: 'auto',
+  maxWidth: null,
+  maxHeight: null,
+  maxSizeMB: null,
+};
+
+export type Caps = { avif: boolean; webp: boolean };
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed';
 
@@ -12,7 +30,7 @@ export type Job = {
   previewUrl: string | null;
   status: JobStatus;
   progress: number;
-  out: (CompressOutput & { url: string }) | null;
+  out: CompressResult | null;
   errorKind: 'decode' | 'generic' | null;
 };
 
@@ -21,9 +39,22 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const IMAGE_RE = /\.(jpe?g|png|webp|avif|gif|bmp|heic|heif)$/i;
 export const isImage = (f: File) => f.type.startsWith('image/') || IMAGE_RE.test(f.name);
 
-/** Probed once, on the main thread, then handed to every worker. */
+/** Probed once, on the main thread, purely for UI purposes (the pool probes its
+ *  own capabilities internally now — see compresso.js's §2.9). */
 function probeCaps(): Caps {
   return { avif: isFormatSupported('avif'), webp: isFormatSupported('webp') };
+}
+
+function toOptions(p: Params, signal: AbortSignal, onProgress: (n: number) => void) {
+  return {
+    quality: p.quality,
+    format: p.format,
+    ...(p.maxWidth ? { maxWidth: p.maxWidth } : {}),
+    ...(p.maxHeight ? { maxHeight: p.maxHeight } : {}),
+    ...(p.maxSizeMB ? { maxSizeMB: p.maxSizeMB } : {}),
+    signal,
+    onProgress: (e: { progress: number }) => onProgress(e.progress),
+  };
 }
 
 /**
@@ -55,15 +86,48 @@ async function previewUrlFor(file: File): Promise<string> {
   }
 }
 
+/**
+ * A single worker kept aside for the live preview, so dragging the quality slider
+ * during a large batch answers immediately instead of queueing behind it.
+ *
+ * `compresso.js/pool`'s `createPool()` doesn't hand job ids back to the caller (see
+ * its README's "if you've rolled your own worker pool" note), so unlike the old
+ * hand-rolled `PreviewWorker`, "cancel whatever was running, keep only the latest"
+ * goes through `AbortController` instead of a pool-assigned id.
+ */
+function createPreviewWorker() {
+  const pool = createPool({ size: 1 });
+  let controller: AbortController | null = null;
+
+  return {
+    async run(file: File, params: Params): Promise<CompressResult | null> {
+      controller?.abort();
+      const mine = (controller = new AbortController());
+      try {
+        const out = await pool.compress(file, toOptions(params, mine.signal, () => {}));
+        return controller === mine ? out : null;
+      } catch {
+        return null;
+      }
+    },
+    destroy() {
+      pool.destroy();
+    },
+  };
+}
+
 export function useQueue() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const caps = useMemo(probeCaps, []);
-  const poolSize = useMemo(() => Pool.defaultSize(), []);
+  const poolSize = useMemo(() => defaultPoolSize(), []);
   const poolRef = useRef<Pool | null>(null);
-  const previewRef = useRef<PreviewWorker | null>(null);
+  const previewRef = useRef<ReturnType<typeof createPreviewWorker> | null>(null);
+  // Only the main pool's jobs are tracked here — the preview worker manages its
+  // own single in-flight AbortController internally (see createPreviewWorker).
+  const controllersRef = useRef<Map<string, AbortController>>(new Map());
   const jobsRef = useRef<Job[]>([]);
   const paramsRef = useRef(params);
   const selectedRef = useRef<string | null>(null);
@@ -79,14 +143,16 @@ export function useQueue() {
    * that in development — and a pool that was torn down on the way out must not
    * be reused on the way back in, or every worker is already terminated.
    */
-  const getPool = useCallback(() => (poolRef.current ??= new Pool(caps)), [caps]);
-  const getPreview = useCallback(() => (previewRef.current ??= new PreviewWorker(caps)), [caps]);
+  const getPool = useCallback(() => (poolRef.current ??= createPool()), []);
+  const getPreview = useCallback(() => (previewRef.current ??= createPreviewWorker()), []);
 
   useEffect(() => () => {
     poolRef.current?.destroy();
     poolRef.current = null;
     previewRef.current?.destroy();
     previewRef.current = null;
+    for (const controller of controllersRef.current.values()) controller.abort();
+    controllersRef.current.clear();
     for (const j of jobsRef.current) {
       if (j.previewUrl) URL.revokeObjectURL(j.previewUrl);
       if (j.out) URL.revokeObjectURL(j.out.url);
@@ -104,25 +170,29 @@ export function useQueue() {
     const isSelected = job.id === selectedRef.current;
     patch(job.id, { status: 'running', progress: isSelected ? 0.35 : 0 });
 
+    const controller = new AbortController();
+    if (!isSelected) controllersRef.current.set(job.id, controller);
+
     try {
       const out = isSelected
         ? await getPreview().run(job.file, p)
-        : await getPool().run(job.id, job.file, p, (progress) =>
-            patch(job.id, { progress }));
+        : await getPool().compress(job.file, toOptions(p, controller.signal, (progress) =>
+            patch(job.id, { progress })));
 
       if (token !== runToken.current || !out) return;
 
-      const url = URL.createObjectURL(out.blob);
       setJobs((cur) => cur.map((j) => {
         if (j.id !== job.id) return j;
         if (j.out) URL.revokeObjectURL(j.out.url);
-        return { ...j, status: 'done', progress: 1, out: { ...out, url }, errorKind: null };
+        return { ...j, status: 'done', progress: 1, out, errorKind: null };
       }));
     } catch (err) {
       if (token !== runToken.current) return;
       const kind = (err as { kind?: string }).kind;
-      if (kind === 'cancelled') return;
+      if (kind === 'aborted') return;
       patch(job.id, { status: 'failed', progress: 0, errorKind: kind === 'decode' ? 'decode' : 'generic' });
+    } finally {
+      if (!isSelected) controllersRef.current.delete(job.id);
     }
   }, [patch, getPool, getPreview]);
 
@@ -156,17 +226,19 @@ export function useQueue() {
     if (!jobsRef.current.length) return;
 
     const timer = window.setTimeout(() => {
-      getPool().cancelAll();
+      for (const controller of controllersRef.current.values()) controller.abort();
+      controllersRef.current.clear();
       const token = ++runToken.current;
       const current = jobsRef.current;
       setJobs((cur) => cur.map((j) => ({ ...j, status: 'queued', progress: 0, errorKind: null })));
       for (const job of current) void runJob(job, token);
     }, 180);
     return () => window.clearTimeout(timer);
-  }, [paramsKey, runJob, getPool]);
+  }, [paramsKey, runJob]);
 
   const remove = useCallback((id: string) => {
-    poolRef.current?.cancel(id);
+    controllersRef.current.get(id)?.abort();
+    controllersRef.current.delete(id);
     setJobs((cur) => {
       const target = cur.find((j) => j.id === id);
       if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
@@ -178,7 +250,8 @@ export function useQueue() {
   }, []);
 
   const clear = useCallback(() => {
-    poolRef.current?.cancelAll();
+    for (const controller of controllersRef.current.values()) controller.abort();
+    controllersRef.current.clear();
     runToken.current++;
     setJobs((cur) => {
       for (const j of cur) {

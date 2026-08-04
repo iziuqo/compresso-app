@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { T, useI18n } from '../i18n';
 import { NumberField, Slider, Tabs, type Option } from './primitives';
 import { Chevron } from './icons';
-import type { Caps, Format, Params } from '../engine/types';
-import type { Job } from '../state/queue';
+import type { Caps, Format, Params, Job } from '../state/queue';
 
 /**
  * The console: everything you can change, in one band under the picture.
