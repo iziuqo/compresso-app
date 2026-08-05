@@ -106,8 +106,16 @@ function createPreviewWorker() {
       try {
         const out = await pool.compress(file, toOptions(params, mine.signal, () => {}));
         return controller === mine ? out : null;
-      } catch {
-        return null;
+      } catch (err) {
+        // Superseded by a newer call (its own `abort()` above triggered this
+        // rejection) — the newer run already owns `controller`, so this result
+        // is stale and dropping it silently is correct.
+        if (controller !== mine) return null;
+        // A genuine failure (crash, timeout, decode error) on the run that's
+        // still current. Swallowing this to null previously left the job
+        // stuck in "running" forever with no error surfaced — see runJob's
+        // `if (!out) return`. Rethrow so runJob's catch marks it failed.
+        throw err;
       }
     },
     destroy() {
