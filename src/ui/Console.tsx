@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { T, useI18n } from '../i18n';
 import { NumberField, Slider, Tabs, type Option } from './primitives';
 import { Chevron } from './icons';
-import type { Caps, Format, Params, Job } from '../state/queue';
+import { CAPPED_MAX_DIMENSION, type Caps, type Format, type Params, type Job } from '../state/queue';
+
+const HINT_SEEN_KEY = 'compresso.dimensionsHintSeen';
+
+function readHintSeen(): boolean {
+  try { return localStorage.getItem(HINT_SEEN_KEY) === '1'; } catch { return false; }
+}
 
 /**
  * The console: everything you can change, in one band under the picture.
@@ -12,8 +18,8 @@ import type { Caps, Format, Params, Job } from '../state/queue';
  * the order you'd reach for them, and the image keeps the room.
  */
 export function Console({
-  params, setParams, caps, selected,
-}: { params: Params; setParams: (p: Params) => void; caps: Caps; selected: Job | null }) {
+  params, setParams, caps, selected, autoCapped,
+}: { params: Params; setParams: (p: Params) => void; caps: Caps; selected: Job | null; autoCapped: boolean }) {
   const { t, percent, bytes } = useI18n();
 
   const formats: Option<Format>[] = [
@@ -25,11 +31,29 @@ export function Console({
   ];
 
   const [open, setOpen] = useState(false);
+  const [hintSeen, setHintSeen] = useState(readHintSeen);
   const out = selected?.out ?? null;
   const grew = out ? out.savings < 0 : false;
   const set = <K extends keyof Params>(k: K, v: Params[K]) => setParams({ ...params, [k]: v });
-  // A limit that's actually set can never be hidden behind a fold.
-  const hasLimits = params.maxWidth != null || params.maxHeight != null || params.maxSizeMB != null;
+  // A limit the user actually changed can never be hidden behind a fold —
+  // but a cap applied only because the device/image warranted it (see
+  // queue.ts's isLikelyLowEndAndroid/isLargeImage) is still a default, not
+  // an edit, so it doesn't count as "set" for this purpose either.
+  const sessionDefaultDim = autoCapped ? CAPPED_MAX_DIMENSION : null;
+  const hasLimits = params.maxWidth !== sessionDefaultDim
+    || params.maxHeight !== sessionDefaultDim
+    || params.maxSizeMB != null;
+  // An auto-applied default the user hasn't looked at yet gets a small hint
+  // so it doesn't sit silently behind the fold; looking once is enough.
+  const showHint = autoCapped && !hintSeen;
+
+  const toggleOpen = () => {
+    setOpen((v) => !v);
+    if (!hintSeen) {
+      setHintSeen(true);
+      try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch { /* private mode */ }
+    }
+  };
 
   return (
     <div className="console">
@@ -51,9 +75,15 @@ export function Console({
           type="button"
           className="fold__toggle label"
           aria-expanded={open || hasLimits}
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggleOpen}
         >
           <T k="rail.dimensions" />
+          {showHint && (
+            <>
+              <span className="sr">{t('rail.dimensionsHint')}</span>
+              <span className="fold__badge" aria-hidden="true" />
+            </>
+          )}
           <Chevron size={11} className="fold__caret" />
         </button>
       </div>

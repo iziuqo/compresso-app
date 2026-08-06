@@ -248,7 +248,10 @@ export default function App() {
               />
             )}
 
-            <Console params={q.params} setParams={q.setParams} caps={q.caps} selected={q.selected} />
+            <Console
+              params={q.params} setParams={q.setParams} caps={q.caps}
+              selected={q.selected} autoCapped={q.autoCapped}
+            />
 
             <div
               className={`strip ${settleRun ? 'is-settling' : ''}`}
