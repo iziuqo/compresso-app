@@ -9,6 +9,7 @@
   "rail.format": "Format",
   "rail.quality": "Qualität",
   "rail.dimensions": "Maße",
+  "rail.dimensionsHint": "Ein Standardlimit ist bereits aktiv",
   "rail.maxWidth": "Max. Breite",
   "rail.maxHeight": "Max. Höhe",
   "rail.maxSize": "Größenlimit",

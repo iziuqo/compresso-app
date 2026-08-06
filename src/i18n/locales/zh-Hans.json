@@ -9,6 +9,7 @@
   "rail.format": "格式",
   "rail.quality": "质量",
   "rail.dimensions": "尺寸",
+  "rail.dimensionsHint": "已应用默认限制",
   "rail.maxWidth": "最大宽度",
   "rail.maxHeight": "最大高度",
   "rail.maxSize": "体积上限",

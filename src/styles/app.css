@@ -390,6 +390,14 @@ img { max-width: 100%; display: block; }
 }
 .fold__toggle:hover { color: var(--ink-2); }
 .fold__caret { display: inline-grid; transition: transform var(--dur-standard) var(--ease-standard); }
+/* A default applied without being asked for gets a small nudge to go look —
+   same dot/pulse as .status__pulse, just a touch brighter since this one's
+   job is to be noticed, not to quietly confirm something's running. */
+.fold__badge {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--ink-2);
+  animation: pulse 1.8s var(--ease-glide) infinite;
+}
 .fold__toggle[aria-expanded='true'] { color: var(--ink-2); }
 .fold__toggle[aria-expanded='true'] .fold__caret { transform: rotate(180deg); }
 .fold__hint { margin-top: var(--s-3); color: var(--ink-3); }

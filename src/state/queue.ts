@@ -13,20 +13,59 @@ export type Params = {
 };
 
 // Matches compresso.js's own DEFAULT_MAX_DIMENSION (compress.js), which the
-// library applies only on the Safari-JPEG-fallback path. Here it's this
-// app's own default for every browser/format — a full-resolution encode of
-// a 12-48 MP phone photo is real cost on exactly the low-end-Android tier
-// this app has to run well on, not just Safari. Still fully user-editable/
-// removable via the existing Dimensions fields.
-const DEFAULT_MAX_DIMENSION = 2048;
+// library applies only on the Safari-JPEG-fallback path. Applying it more
+// broadly has a real cost too (on-device encode time/memory), so it's only
+// worth paying when there's good reason — see isLikelyLowEndAndroid and
+// isLargeImage below. Absent that reason, the true default is full
+// resolution, same as the library gives every WebP/AVIF-capable browser.
+export const CAPPED_MAX_DIMENSION = 2048;
+
+// A 24 MP frame is already a high-end phone/mirrorless output, not a
+// typical snapshot — comfortably past the point where encoding it at full
+// resolution on a weak device is the exact cost this cap exists to avoid.
+const LARGE_IMAGE_MEGAPIXELS = 24;
 
 export const DEFAULT_PARAMS: Params = {
   quality: 0.8,
   format: 'auto',
-  maxWidth: DEFAULT_MAX_DIMENSION,
-  maxHeight: DEFAULT_MAX_DIMENSION,
+  maxWidth: null,
+  maxHeight: null,
   maxSizeMB: null,
 };
+
+const cappedParams = (p: Params): Params => (
+  { ...p, maxWidth: CAPPED_MAX_DIMENSION, maxHeight: CAPPED_MAX_DIMENSION }
+);
+
+// Computed once — every caller just needs "the defaults, capped or not."
+const CAPPED_DEFAULT_PARAMS: Params = cappedParams(DEFAULT_PARAMS);
+const defaultParamsFor = (capped: boolean): Params => (capped ? CAPPED_DEFAULT_PARAMS : DEFAULT_PARAMS);
+
+// True only while none of the *size* fields have been decided or touched
+// yet. Deliberately narrower than "the whole Params object is untouched":
+// changing quality/format expresses no opinion about resolution, so it must
+// not block the size-based auto-cap below. Once this is false, applying the
+// cap would override an actual size choice (including "no limit, on purpose").
+const dimensionsUntouched = (p: Params) =>
+  p.maxWidth == null && p.maxHeight == null && p.maxSizeMB == null;
+
+/**
+ * Android, plus a device-reported RAM figure at or below 4 GB from
+ * Chromium's Device Memory API (unsupported elsewhere, including all of
+ * iOS — where it never fires). This is a direct signal, not one inferred
+ * from a proxy like screen size or connection speed — but the API itself
+ * returns an intentionally coarse, quantized estimate, not an exact reading,
+ * so "Likely" in the name is honest, not a hedge to be tightened.
+ */
+function isLikelyLowEndAndroid(): boolean {
+  if (!/Android/i.test(navigator.userAgent)) return false;
+  const mem = (navigator as { deviceMemory?: number }).deviceMemory;
+  return typeof mem === 'number' && mem <= 4;
+}
+
+// Measured pixels from a completed decode — real dimensions, not a pre-guess.
+const isLargeImage = (width: number, height: number) =>
+  width * height > LARGE_IMAGE_MEGAPIXELS * 1_000_000;
 
 export type Caps = { avif: boolean; webp: boolean };
 
@@ -134,7 +173,12 @@ function createPreviewWorker() {
 
 export function useQueue() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
+  // Decided once, synchronously, from device signals available before any
+  // file exists — see isLikelyLowEndAndroid. The image-size half of the same
+  // decision (isLargeImage) can only fire once a file has actually been
+  // decoded, so it lands later, inside runJob.
+  const [autoCapped, setAutoCapped] = useState(isLikelyLowEndAndroid);
+  const [params, setParams] = useState<Params>(() => defaultParamsFor(autoCapped));
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const caps = useMemo(probeCaps, []);
@@ -147,11 +191,13 @@ export function useQueue() {
   const jobsRef = useRef<Job[]>([]);
   const paramsRef = useRef(params);
   const selectedRef = useRef<string | null>(null);
+  const autoCappedRef = useRef(autoCapped);
   const runToken = useRef(0);
 
   jobsRef.current = jobs;
   paramsRef.current = params;
   selectedRef.current = selectedId;
+  autoCappedRef.current = autoCapped;
 
   /**
    * Lazily (re)created rather than built once at first render. React can unmount
@@ -196,6 +242,25 @@ export function useQueue() {
             patch(job.id, { progress })));
 
       if (token !== runToken.current || !out) return;
+
+      // The image turned out to be genuinely large — before this result ever
+      // reaches the screen, decide whether the cap should have applied from
+      // the start. Checked against the live params (not `p`, which may now
+      // be stale) so this never overrides a size choice made mid-run,
+      // including having removed the cap on purpose.
+      const liveParams = paramsRef.current;
+      if (!autoCappedRef.current && dimensionsUntouched(liveParams) && isLargeImage(out.originalWidth, out.originalHeight)) {
+        autoCappedRef.current = true;
+        setAutoCapped(true);
+        // Discard this uncapped result rather than showing it: a "done" that
+        // a moment later reverts to "still working" reads as a bug, not as
+        // the smart default it actually is. setParams restales every job
+        // (see the paramsKey effect below), so this one reruns too — capped,
+        // and the only version the user ever sees.
+        URL.revokeObjectURL(out.url);
+        setParams(cappedParams(liveParams));
+        return;
+      }
 
       setJobs((cur) => cur.map((j) => {
         if (j.id !== job.id) return j;
@@ -277,7 +342,9 @@ export function useQueue() {
       return [];
     });
     setSelectedId(null);
-    setParams(DEFAULT_PARAMS);
+    // Starting over drops the images but not what was learned about the
+    // device/session — a cap already earned stays earned.
+    setParams(defaultParamsFor(autoCappedRef.current));
   }, []);
 
   const retry = useCallback((id: string) => {
@@ -307,7 +374,7 @@ export function useQueue() {
 
   return {
     jobs, selected, selectedId, setSelectedId,
-    params, setParams, totals, caps,
+    params, setParams, totals, caps, autoCapped,
     add, remove, clear, retry,
     poolSize,
   };
