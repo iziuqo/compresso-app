@@ -12,6 +12,7 @@
   "rail.maxWidth": "最大宽度",
   "rail.maxHeight": "最大高度",
   "rail.maxSize": "体积上限",
+  "rail.maxSizeHint": "体积上限设得越紧，尝试的质量级别就越多，可能需要多一点时间",
   "rail.auto": "自动",
   "rail.autoNote": "此浏览器能写出的最佳格式",
   "rail.applyAll": "应用于全部",

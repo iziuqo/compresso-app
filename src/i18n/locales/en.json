@@ -12,6 +12,7 @@
   "rail.maxWidth": "Max width",
   "rail.maxHeight": "Max height",
   "rail.maxSize": "Size limit",
+  "rail.maxSizeHint": "A tight limit tries several quality levels — it may take a moment longer",
   "rail.auto": "Auto",
   "rail.autoNote": "Best format this browser can write",
   "rail.applyAll": "Apply to every image",

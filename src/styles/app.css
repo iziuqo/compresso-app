@@ -392,6 +392,7 @@ img { max-width: 100%; display: block; }
 .fold__caret { display: inline-grid; transition: transform var(--dur-standard) var(--ease-standard); }
 .fold__toggle[aria-expanded='true'] { color: var(--ink-2); }
 .fold__toggle[aria-expanded='true'] .fold__caret { transform: rotate(180deg); }
+.fold__hint { margin-top: var(--s-3); color: var(--ink-3); }
 
 /* ---- the slider: the signature control -------------------------------- */
 .sl { display: grid; justify-items: center; gap: var(--s-2); }

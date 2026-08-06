@@ -12,6 +12,7 @@
   "rail.maxWidth": "Ancho máx.",
   "rail.maxHeight": "Alto máx.",
   "rail.maxSize": "Límite de peso",
+  "rail.maxSizeHint": "Un límite ajustado prueba varios niveles de calidad — puede tardar un poco más",
   "rail.auto": "Auto",
   "rail.autoNote": "El mejor formato que este navegador sabe escribir",
   "rail.applyAll": "Aplicar a todas",

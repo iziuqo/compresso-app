@@ -77,6 +77,9 @@ export function Console({
               placeholder={t('rail.unset')} suffix="MB" onChange={(v) => set('maxSizeMB', v)}
             />
           </div>
+          {params.maxSizeMB != null && (
+            <p className="fold__hint label"><T k="rail.maxSizeHint" /></p>
+          )}
         </div>
       </div>
 
