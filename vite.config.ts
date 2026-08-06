@@ -12,6 +12,34 @@ const SCOPE = '/compresso';
 
 export default defineConfig({
   base: BASE,
+  // compresso.js/pool resolves its worker via `new URL('./worker.js',
+  // import.meta.url)` in its own dist file. Vite's dep pre-bundler (esbuild)
+  // doesn't rewrite that expression or copy the referenced worker.js into
+  // `.vite/deps/`, so at runtime `import.meta.url` points at the pre-bundled
+  // file's own location and the worker 404s — only in dev; a production
+  // build handles this correctly since it runs the whole graph through
+  // Vite/Rollup's own `new URL(...)` asset handling. Excluding the package
+  // from optimizeDeps serves it unbundled, through Vite's normal transform
+  // pipeline, which resolves the URL correctly.
+  optimizeDeps: { exclude: ['compresso.js'] },
+  resolve: {
+    alias: {
+      // heic.js's importHeicTo() branches on `typeof document === 'undefined'`
+      // at runtime. Every call site reachable from this app's main graph runs
+      // on the main thread, so that branch is always false — but Vite can't
+      // prove that statically and bundles the unreachable 'heic-to/next'
+      // chunk anyway (~2.9 MB, byte-identical in shape to the 'heic-to'
+      // chunk it duplicates). Redirecting it to the branch that actually
+      // executes collapses two chunks into one. Does NOT touch the real
+      // worker path — compresso.js/pool resolves its HEIC codec via a
+      // concrete URL (DEFAULT_HEIC_TO_URL in pool.js), never through this
+      // specifier — so worker-side HEIC decoding is unaffected. Re-check
+      // this alias on any compresso.js version bump: it depends on
+      // importHeicTo()'s internal isWorker check never being reachable as
+      // true from this app's own call sites.
+      'heic-to/next': 'heic-to',
+    },
+  },
   plugins: [
     react(),
     VitePWA({
