@@ -12,6 +12,16 @@ const SCOPE = '/compresso';
 
 export default defineConfig({
   base: BASE,
+  // compresso.js/pool resolves its worker via `new URL('./worker.js',
+  // import.meta.url)` in its own dist file. Vite's dep pre-bundler (esbuild)
+  // doesn't rewrite that expression or copy the referenced worker.js into
+  // `.vite/deps/`, so at runtime `import.meta.url` points at the pre-bundled
+  // file's own location and the worker 404s — only in dev; a production
+  // build handles this correctly since it runs the whole graph through
+  // Vite/Rollup's own `new URL(...)` asset handling. Excluding the package
+  // from optimizeDeps serves it unbundled, through Vite's normal transform
+  // pipeline, which resolves the URL correctly.
+  optimizeDeps: { exclude: ['compresso.js'] },
   resolve: {
     alias: {
       // heic.js's importHeicTo() branches on `typeof document === 'undefined'`
