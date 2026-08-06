@@ -12,11 +12,19 @@ export type Params = {
   maxSizeMB: number | null;
 };
 
+// Matches compresso.js's own DEFAULT_MAX_DIMENSION (compress.js), which the
+// library applies only on the Safari-JPEG-fallback path. Here it's this
+// app's own default for every browser/format — a full-resolution encode of
+// a 12-48 MP phone photo is real cost on exactly the low-end-Android tier
+// this app has to run well on, not just Safari. Still fully user-editable/
+// removable via the existing Dimensions fields.
+const DEFAULT_MAX_DIMENSION = 2048;
+
 export const DEFAULT_PARAMS: Params = {
   quality: 0.8,
   format: 'auto',
-  maxWidth: null,
-  maxHeight: null,
+  maxWidth: DEFAULT_MAX_DIMENSION,
+  maxHeight: DEFAULT_MAX_DIMENSION,
   maxSizeMB: null,
 };
 
